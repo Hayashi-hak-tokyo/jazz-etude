@@ -1,421 +1,860 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rudiments Drum Solo Etude - IDM & Syncopation</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jazz Etude Generator</title>
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/abcjs/6.2.2/abcjs-audio.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/abcjs/6.2.2/abcjs-basic-min.js"></script>
 
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-
-    <!-- React & ReactDOM -->
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <style>
+    .abcjs-css-warning { display: none !important; }
     
-    <!-- Babel for JSX -->
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    
+    .abcjs-note { fill: #1f2937; }
+    .abcjs-staff { fill: #1f2937; }
+    
+    #paper { padding-bottom: 20px; }
+    #paper svg { 
+      overflow: visible !important; 
+      margin-bottom: 40px !important; 
+    }
 
-    <!-- ABCJS for Music Notation & Audio -->
-    <script src="https://cdn.jsdelivr.net/npm/abcjs@6.3.0/dist/abcjs-basic-min.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/abcjs@6.3.0/abcjs-audio.min.css">
-
-    <style>
-        .abcjs-css-warning { display: none !important; }
-        body { font-family: 'Inter', sans-serif; background-color: #f4f4f5; }
-        #score-container svg { width: 100%; height: auto; display: block; }
-        .abcjs-inline-audio { max-width: 100%; padding: 10px; }
-
-        /* 楽譜上のダイナミクス記号(f, p, fp等)とアクセント記号(>)を非表示にする */
-        .abcjs-decoration, .abcjs-articulation, .abcjs-dynamics {
-            display: none !important;
-        }
-    </style>
+    .abcjs-inline-audio { margin: 0; padding: 10px; display: flex; align-items: center; gap: 8px; justify-content: center; }
+    
+    .abcjs-inline-audio .abcjs-btn {
+       background-color: #e2e8f0 !important;
+       border: 1px solid #cbd5e1 !important;
+       border-radius: 8px !important;
+       color: #334155 !important;
+       width: 36px !important;
+       height: 36px !important;
+       cursor: pointer;
+       display: inline-flex !important;
+       align-items: center;
+       justify-content: center;
+       margin: 0 4px;
+       padding: 0 !important;
+    }
+    .abcjs-inline-audio .abcjs-btn:hover {
+       background-color: #cbd5e1 !important;
+    }
+    .abcjs-inline-audio .abcjs-btn svg {
+       width: 20px !important;
+       height: 20px !important;
+       fill: #334155 !important;
+    }
+  </style>
 </head>
-<body class="p-4 md:p-8 text-zinc-800">
-    <div id="root"></div>
+<body class="bg-gray-50">
+  <div id="root"></div>
 
-    <script type="text/babel">
-        const { useState, useEffect, useRef } = React;
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
 
-        // --- MOTIF LIBRARY ---
-        // e: High Tom, c: Snare, A: Floor Tom, F: Kick, f: Crash
-        const MOTIF_LIBRARY = {
-            straight: {
-                rest: {
-                    basic: [[["z2", "", ""]]],
-                    advanced: [[["z2", "", ""]]],
-                    extreme: [[["z2", "", ""]]]
-                },
-                acc_1: {
-                    basic: [[["c", "R", "A"], ["c", "L", "G"], ["c", "R", "G"], ["c", "L", "G"]]],
-                    advanced: [
-                        [["c", "R", "A"], ["c", "L", "G"], ["c", "R", "G"], ["c", "L", "G"]],
-                        [["e", "R", "A"], ["c", "L", "G"], ["c", "R", "G"], ["c", "L", "G"]],
-                        [["A", "R", "A"], ["c", "L", "G"], ["e", "R", "G"], ["c", "L", "G"]], // Tom orchestration
-                        [["[!style=x!fF]", "R+K", "A"], ["c", "L", "G"], ["c", "R", "G"], ["c", "L", "G"]]
-                    ],
-                    extreme: [
-                        [["c", "R", "A"], ["c", "L", "G"], ["F", "K", "K"], ["F", "K", "K"]],
-                        [["e", "R", "A"], ["c", "R", "G"], ["A", "L", "G"], ["e", "L", "G"], ["F", "K", "K"], ["F", "K", "K"]], // Tom Linear
-                        [["c", "R", "A"], ["F", "K", "K"]],
-                        [["c", "R", "A", "/"], ["c", "R", "G", "//"], ["c", "L", "G", "//"], ["c", "L", "G", "/"], ["F", "K", "K", "/"]]
-                    ]
-                },
-                acc_2: {
-                    basic: [[["c", "R", "G"], ["c", "L", "A"], ["c", "R", "G"], ["c", "L", "G"]]],
-                    advanced: [
-                        [["c", "R", "G"], ["c", "L", "A"], ["c", "R", "G"], ["c", "L", "G"]],
-                        [["c", "R", "G"], ["A", "L", "A"], ["c", "R", "G"], ["c", "L", "G"]],
-                        [["e", "R", "G"], ["A", "L", "A"], ["e", "R", "G"], ["c", "L", "G"]],
-                        [["c", "R", "G"], ["[!style=x!fF]", "L+K", "A"], ["c", "R", "G"], ["c", "L", "G"]]
-                    ],
-                    extreme: [
-                        [["F", "K", "K"], ["c", "L", "A"], ["c", "R", "G"], ["c", "R", "G"]],
-                        [["F", "K", "K"], ["e", "L", "A"], ["c", "R", "G"], ["A", "L", "G"], ["c", "R", "G"], ["e", "L", "G"]],
-                        [["F", "K", "K", "/"], ["A", "L", "A", "/"], ["c", "R", "G", "//"], ["c", "R", "G", "//"], ["c", "L", "G", "/"]]
-                    ]
-                },
-                acc_3: {
-                    basic: [[["c", "R", "G"], ["c", "L", "G"], ["c", "R", "A"], ["c", "L", "G"]]],
-                    advanced: [
-                        [["c", "R", "G"], ["c", "L", "G"], ["c", "R", "A"], ["c", "L", "G"]],
-                        [["c", "R", "G"], ["c", "L", "G"], ["e", "R", "A"], ["c", "L", "G"]],
-                        [["A", "R", "G"], ["e", "L", "G"], ["A", "R", "A"], ["c", "L", "G"]],
-                        [["c", "R", "G"], ["c", "L", "G"], ["[!style=x!fF]", "R+K", "A"], ["c", "L", "G"]]
-                    ],
-                    extreme: [
-                        [["c", "R", "G"], ["c", "L", "G"], ["c", "R", "A"], ["c", "L", "G"], ["F", "K", "K"], ["F", "K", "K"]],
-                        [["e", "R", "G"], ["c", "L", "G"], ["F", "K", "K"], ["A", "R", "A"], ["F", "K", "K"], ["c", "L", "G"]],
-                        [["c", "R", "G", "//"], ["c", "R", "G", "//"], ["e", "L", "G", "/"], ["A", "R", "A", "/"], ["F", "K", "K", "/"]]
-                    ]
-                },
-                acc_4: {
-                    basic: [[["c", "R", "G"], ["c", "L", "G"], ["c", "R", "G"], ["c", "L", "A"]]],
-                    advanced: [
-                        [["c", "R", "G"], ["c", "L", "G"], ["c", "R", "G"], ["c", "L", "A"]],
-                        [["c", "R", "G"], ["c", "L", "G"], ["c", "R", "G"], ["A", "L", "A"]],
-                        [["e", "R", "G"], ["c", "L", "G"], ["A", "R", "G"], ["e", "L", "A"]],
-                        [["c", "R", "G"], ["c", "L", "G"], ["c", "R", "G"], ["[!style=x!fF]", "L+K", "A"]]
-                    ],
-                    extreme: [
-                        [["c", "R", "G"], ["c", "R", "G"], ["e", "L", "G"], ["A", "L", "G"], ["F", "K", "K"], ["c", "L", "A"]],
-                        [["F", "K", "K"], ["F", "K", "K"], ["e", "R", "G"], ["A", "L", "A"]]
-                    ]
-                }
-            },
-            swing: {
-                rest: { 
-                    basic: [[["z2", "", ""]]], 
-                    advanced: [[["z2", "", ""]]],
-                    extreme: [[["z2", "", ""]]]
-                },
-                acc_1: {
-                    basic: [[["c", "R", "A"], ["c", "L", "G"], ["c", "R", "G"]]],
-                    advanced: [
-                        [["c", "R", "A"], ["c", "L", "G"], ["c", "R", "G"]],
-                        [["e", "R", "A"], ["c", "L", "G"], ["c", "R", "G"]],
-                        [["A", "R", "A"], ["e", "L", "G"], ["c", "R", "G"]],
-                        [["[!style=x!fF]", "R+K", "A"], ["c", "L", "G"], ["c", "R", "G"]]
-                    ]
-                },
-                acc_2: {
-                    basic: [[["c", "L", "G"], ["c", "R", "A"], ["c", "L", "G"]]],
-                    advanced: [
-                        [["c", "L", "G"], ["c", "R", "A"], ["c", "L", "G"]],
-                        [["c", "L", "G"], ["A", "R", "A"], ["c", "L", "G"]],
-                        [["e", "L", "G"], ["A", "R", "A"], ["e", "L", "G"]],
-                        [["c", "L", "G"], ["[!style=x!fF]", "L+K", "A"], ["c", "L", "G"]]
-                    ]
-                },
-                acc_3: {
-                    basic: [[["c", "R", "G"], ["c", "L", "G"], ["c", "R", "A"]]],
-                    advanced: [
-                        [["c", "R", "G"], ["c", "L", "G"], ["c", "R", "A"]],
-                        [["c", "R", "G"], ["c", "L", "G"], ["e", "R", "A"]],
-                        [["e", "R", "G"], ["A", "L", "G"], ["A", "R", "A"]],
-                        [["c", "R", "G"], ["c", "L", "G"], ["[!style=x!fF]", "R+K", "A"]]
-                    ]
-                },
-                acc_4: {
-                    basic: [[["c", "L", "G"], ["c", "R", "G"], ["c", "L", "A"]]],
-                    advanced: [
-                        [["c", "L", "G"], ["c", "R", "G"], ["c", "L", "A"]],
-                        [["c", "L", "G"], ["c", "R", "G"], ["A", "L", "A"]],
-                        [["A", "L", "G"], ["c", "R", "G"], ["e", "L", "A"]],
-                        [["c", "L", "G"], ["c", "R", "G"], ["[!style=x!fF]", "L+K", "A"]]
-                    ]
-                }
+    const MusicIcon = () => (
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M9 18V5l12-2v13"></path>
+        <circle cx="6" cy="18" r="3"></circle>
+        <circle cx="18" cy="16" r="3"></circle>
+      </svg>
+    );
+
+    const RefreshIcon = () => (
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+        <path d="M3 3v5h5"></path>
+        <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"></path>
+        <path d="M16 21v-5h5"></path>
+      </svg>
+    );
+
+    function App() {
+      const [measureCount, setMeasureCount] = useState(8);
+      const [chords, setChords] = useState(Array(32).fill(""));
+      const [abcString, setAbcString] = useState("");
+      const [audioAbcString, setAudioAbcString] = useState("");
+      const [abcjsLoaded, setAbcjsLoaded] = useState(true);
+
+      const audioRef = useRef(null);
+      const synthRef = useRef(null);
+
+      useEffect(() => {
+        const initialChords = Array(32).fill("");
+        const preset = ["Dm7", "G7", "Cmaj7", "Cmaj7", "Em7", "A7", "Dmaj7", "Dmaj7"];
+        preset.forEach((c, i) => { initialChords[i] = c; });
+        setChords(initialChords);
+      }, []);
+
+      useEffect(() => {
+        if (abcjsLoaded && abcString && window.ABCJS) {
+          window.ABCJS.renderAbc("paper", abcString, {
+            responsive: "resize",
+            add_classes: true,
+            staffwidth: 800,
+            paddingtop: 15,
+            paddingbottom: 80,
+            paddingleft: 20,
+            paddingright: 20,
+          });
+
+          if (window.ABCJS.synth.supportsAudio() && audioRef.current && audioAbcString) {
+            const visualObjForAudio = window.ABCJS.renderAbc("*", audioAbcString, {})[0];
+
+            if (synthRef.current) {
+              synthRef.current.pause();
+              synthRef.current.disable(true);
             }
+            audioRef.current.innerHTML = "";
+
+            const synthControl = new window.ABCJS.synth.SynthController();
+            synthControl.load(audioRef.current, null, {
+              displayLoop: true,
+              displayRestart: true,
+              displayPlay: true,
+              displayProgress: false,
+              displayWarp: true 
+            });
+            
+            synthControl.setTune(visualObjForAudio, false, {
+              chordsOff: true 
+            }).catch(console.error);
+
+            synthRef.current = synthControl;
+          }
+        }
+      }, [abcString, audioAbcString, abcjsLoaded]);
+
+      useEffect(() => {
+        if (abcjsLoaded && chords[0] !== "" && abcString === "") {
+          generateEtude();
+        }
+      }, [abcjsLoaded, chords]);
+
+      const handleMeasureCountChange = (e) => {
+        setMeasureCount(Number(e.target.value));
+      };
+
+      const handleChordChange = (index, value) => {
+        const newChords = [...chords];
+        newChords[index] = value;
+        setChords(newChords);
+      };
+
+      const setPreset = (type) => {
+        const newChords = Array(32).fill("");
+        if (type === '251') {
+          setMeasureCount(4);
+          ["Dm7", "G7", "Cmaj7", "Cmaj7"].forEach((c, i) => newChords[i] = c);
+        } else if (type === 'blues') {
+          setMeasureCount(12);
+          const blues = ["F7", "Bb7", "F7", "Cm7 F7", "Bb7", "Bdim7", "F7", "Am7 D7", "Gm7", "C7", "F7 D7", "Gm7 C7"];
+          blues.forEach((c, i) => newChords[i] = c);
+        } else if (type === 'autumn') {
+          setMeasureCount(8);
+          const autumn = ["Cm7", "F7", "Bbmaj7", "Ebmaj7", "Am7b5", "D7", "Gm7", "Gm7"];
+          autumn.forEach((c, i) => newChords[i] = c);
+        }
+        setChords(newChords);
+      };
+
+      const getMidiOffset = (noteStr) => {
+        const map = {
+          'C': 0, 'C#': 1, 'Db': 1, 'D': 2, 'D#': 3, 'Eb': 3,
+          'E': 4, 'F': 5, 'F#': 6, 'Gb': 6, 'G': 7, 'G#': 8, 'Ab': 8,
+          'A': 9, 'A#': 10, 'Bb': 10, 'B': 11
+        };
+        return map[noteStr] || 0;
+      };
+
+      const getChordTones = (chordStr) => {
+        if (!chordStr) return [0, 4, 7, 11].map(i => 60 + i); 
+
+        const match = chordStr.match(/^[A-G][#b]?/);
+        if (!match) return [0, 4, 7, 11].map(i => 60 + i);
+
+        let root = match[0];
+        let rootMidi = 60 + getMidiOffset(root); 
+        
+        let type = chordStr.substring(root.length);
+        let intervals = [0, 4, 7]; 
+        
+        if (type.includes('maj7') || type.includes('M7') || type.includes('△7')) {
+            intervals = [0, 4, 7, 11];
+        } else if (type.includes('m7b5') || type.includes('h')) {
+            intervals = [0, 3, 6, 10];
+        } else if (type.includes('dim')) {
+            intervals = [0, 3, 6, 9];
+        } else if (type.includes('mM7') || type.includes('m#7')) {
+            intervals = [0, 3, 7, 11];
+        } else if (type.includes('m7') || type.includes('-7')) {
+            intervals = [0, 3, 7, 10];
+        } else if (type.includes('m') || type.includes('-')) {
+            intervals = [0, 3, 7];
+        } else if (type.includes('alt')) {
+            intervals = [0, 1, 3, 4, 8, 10];
+        } else if (type.includes('7') || type.includes('9') || type.includes('13')) {
+            const flavor = Math.random();
+            if (flavor < 0.35) {
+                intervals = [0, 1, 3, 4, 8, 10];
+            } else if (flavor < 0.70) {
+                intervals = [0, 1, 3, 4, 6, 9, 10];
+            } else {
+                intervals = [0, 2, 4, 7, 10];
+            }
+        } else if (type.includes('aug')) {
+            intervals = [0, 4, 8];
+        }
+        
+        return intervals.map(i => rootMidi + i);
+      };
+
+      const getChordInfo = (chordStr) => {
+        if (!chordStr) return { intervals: [0, 4, 7, 11].map(i => 60 + i), isAlteredTension: false }; 
+
+        const match = chordStr.match(/^[A-G][#b]?/);
+        if (!match) return { intervals: [0, 4, 7, 11].map(i => 60 + i), isAlteredTension: false }; 
+
+        let root = match[0];
+        let rootMidi = 60 + getMidiOffset(root); 
+        
+        let type = chordStr.substring(root.length);
+        let intervals = [0, 4, 7]; 
+        let isAlteredTension = false;
+        
+        if (type.includes('maj7') || type.includes('M7') || type.includes('△7')) {
+            intervals = [0, 4, 7, 11];
+        } else if (type.includes('m7b5') || type.includes('h')) {
+            intervals = [0, 3, 6, 10];
+        } else if (type.includes('dim')) {
+            intervals = [0, 3, 6, 9];
+        } else if (type.includes('mM7') || type.includes('m#7')) {
+            intervals = [0, 3, 7, 11];
+        } else if (type.includes('m7') || type.includes('-7')) {
+            intervals = [0, 3, 7, 10];
+        } else if (type.includes('m') || type.includes('-')) {
+            intervals = [0, 3, 7];
+        } else if (type.includes('alt')) {
+            intervals = [0, 1, 3, 4, 8, 10];
+            isAlteredTension = true;
+        } else if (type.includes('7') || type.includes('9') || type.includes('13')) {
+            const flavor = Math.random();
+            if (flavor < 0.35) {
+                intervals = [0, 1, 3, 4, 8, 10];
+                isAlteredTension = true;
+            } else if (flavor < 0.70) {
+                intervals = [0, 1, 3, 4, 6, 9, 10];
+                isAlteredTension = true;
+            } else {
+                intervals = [0, 2, 4, 7, 10];
+            }
+        } else if (type.includes('aug')) {
+            intervals = [0, 4, 8];
+        }
+        
+        return { intervals: intervals.map(i => rootMidi + i), isAlteredTension };
+      };
+
+      const generateEtude = () => {
+        let headerDisplay = "X: 1\n";
+        headerDisplay += "T: Jazz Solo Etude\n";
+        headerDisplay += "M: 4/4\n";
+        headerDisplay += "L: 1/8\n";
+        headerDisplay += "Q: 1/4=140\n";
+        headerDisplay += "K: C\n"; 
+
+        let headerAudio = headerDisplay;
+        headerAudio += "%%staves (1 2)\n";
+        headerAudio += "V: 1 clef=treble\n";
+        headerAudio += "%%MIDI program 0\n"; 
+        headerAudio += "%%MIDI control 7 127\n"; 
+        headerAudio += "V: 2 clef=bass\n";
+        headerAudio += "%%MIDI program 48\n"; 
+        headerAudio += "%%MIDI control 7 30\n"; 
+
+        const getAbcNote = (midi, measureAccidentalsRef) => {
+          const isFlatKey = chords.some(c => c.includes('b') || c.includes('F'));
+          let noteNames, defaultAccidentals;
+          
+          if (isFlatKey) {
+            noteNames = ['C', 'D', 'D', 'E', 'E', 'F', 'G', 'G', 'A', 'A', 'B', 'B'];
+            defaultAccidentals = ['', '_', '', '_', '', '', '_', '', '_', '', '_', '']; 
+          } else {
+            noteNames = ['C', 'C', 'D', 'D', 'E', 'F', 'F', 'G', 'G', 'A', 'A', 'B'];
+            defaultAccidentals = ['', '^', '', '^', '', '', '^', '', '^', '', '^', '']; 
+          }
+          
+          const octave = Math.floor(midi / 12) - 1;
+          const noteClass = midi % 12;
+          const baseName = noteNames[noteClass];
+          const targetAcc = defaultAccidentals[noteClass];
+          
+          let abcName = baseName;
+          if (octave === 3) abcName += ",";
+          else if (octave === 5) abcName = abcName.toLowerCase();
+          else if (octave >= 6) {
+              abcName = abcName.toLowerCase();
+              for(let k=6; k<=octave; k++) abcName += "'";
+          }
+          
+          const key = baseName + octave;
+          const currentAcc = measureAccidentalsRef[key] !== undefined ? measureAccidentalsRef[key] : '';
+          
+          let prefix = "";
+          if (currentAcc !== targetAcc) {
+              prefix = targetAcc === '' ? '=' : targetAcc;
+              measureAccidentalsRef[key] = targetAcc;
+          }
+          return prefix + abcName;
         };
 
-        function slotToNotesAndWords(slot) {
-            let notes = "";
-            let wordsArr = [];
+        const getAbcChord = (chordStr, measureAccidentalsRef) => {
+          let baseChordStr = chordStr.replace(/alt/g, '7'); 
+          const tones = getChordTones(baseChordStr);
+          const abcNotes = tones.map(midi => getAbcNote(midi - 12, measureAccidentalsRef));
+          return "[" + abcNotes.join("") + "]";
+        };
 
-            const processNote = (s, is16th = false, is32nd = false) => {
-                let [note, sticking, dyn, duration] = s;
-                if (note.includes("z")) return note + (duration || (is16th ? "/" : is32nd ? "//" : ""));
+        let flatChords = [];
+        for (let i = 0; i < measureCount; i++) {
+            let chordStr = chords[i] || "Cmaj7";
+            let chordList = chordStr.split(/\s+/).filter(c => c.length > 0);
+            if (chordList.length === 0) chordList = ["Cmaj7"];
+            
+            let chordInfos = chordList.map(c => ({ chord: c, info: getChordInfo(c) }));
+            
+            for (let s = 0; s < 8; s++) {
+                let currentIdx = 0;
+                if (chordList.length >= 2 && s >= 4) currentIdx = 1;
+                if (chordList.length >= 4) currentIdx = Math.floor(s/2);
+                
+                flatChords.push({ 
+                    measure: i, 
+                    slot: s, 
+                    chord: chordInfos[currentIdx].chord,
+                    tones: chordInfos[currentIdx].info.intervals,
+                    isAltered: chordInfos[currentIdx].info.isAlteredTension
+                });
+            }
+        }
 
-                let prefix = "";
-                if (dyn === 'A') {
-                    prefix = "!ff!!>!"; 
-                    wordsArr.push(sticking.toUpperCase());
-                } else if (dyn === 'G') {
-                    prefix = "!ppp!";
-                    wordsArr.push(sticking.toLowerCase());
-                } else {
-                    prefix = "!f!";
-                    wordsArr.push(sticking.toUpperCase());
+        let totalSlots = flatChords.length;
+        let notes = new Array(totalSlots).fill(null);
+        let isRest = new Array(totalSlots).fill(false);
+
+        let firstChord = flatChords[0].chord;
+        let firstTones = flatChords[0].tones;
+        notes[0] = firstTones[0] + 12; 
+        
+        for (let index = 1; index < totalSlots; index++) {
+            let prevTarget = notes[index - 1];
+            let prevPrevTarget = index >= 2 ? notes[index - 2] : null; 
+            let prevPrevPrevTarget = index >= 3 ? notes[index - 3] : null; 
+            let currentChord = flatChords[index].chord;
+            let chordTones = flatChords[index].tones;
+            
+            let target = prevTarget;
+            let minDist = 9999;
+            
+            let preferJump = Math.random() < 0.2;
+
+            for(let oct = -1; oct <= 1; oct++) {
+                chordTones.forEach(ct => {
+                    let n = ct + (oct * 12);
+                    if (n >= 55 && n <= 84) {
+                        let dist = Math.abs(n - prevTarget);
+                        // 同音連打を完全に防ぐ強力なペナルティ
+                        if (n === prevTarget) dist += 1000; 
+                        
+                        // ドレドレのような狭い往復（2つ前の音と同じ）を強力に防ぐ
+                        if (n === prevPrevTarget) dist += 500;
+                        
+                        // 3つ前の音と同じになるのも防ぐ
+                        if (n === prevPrevPrevTarget) dist += 50;
+                        
+                        if (preferJump) {
+                            let jumpScore = Math.abs(dist - 7); 
+                            if (jumpScore < minDist) {
+                                minDist = jumpScore;
+                                target = n;
+                            }
+                        } else {
+                            dist += Math.random() * 3; 
+                            if (dist < minDist) {
+                                minDist = dist;
+                                target = n;
+                            }
+                        }
+                    }
+                });
+            }
+            notes[index] = target;
+        }
+
+        let isApproach = new Array(totalSlots).fill(false);
+        for (let index = 0; index < totalSlots - 1; index++) {
+            let isChordChange = flatChords[index].chord !== flatChords[index + 1].chord;
+            
+            // コードが変わるタイミングでのみアプローチノートを発生させる
+            if (isChordChange) {
+                let forceApproach = flatChords[index].isAltered;
+
+                if (forceApproach || Math.random() < 0.6) {
+                    let nextTarget = notes[index + 1];
+                    let appType = Math.random();
+                    let approachNote = nextTarget;
+                    
+                    if (appType < 0.3) approachNote = nextTarget - 1; 
+                    else if (appType < 0.6) approachNote = nextTarget + 1; 
+                    else if (appType < 0.8) approachNote = nextTarget + 2; 
+                    else approachNote = nextTarget - 2; 
+
+                    if (approachNote < 55) approachNote += 12;
+                    if (approachNote > 84) approachNote -= 12;
+                    
+                    // アプローチノートが直前の音や2つ前の音と同音（往復）になるのを防ぐ
+                    if (index > 0) {
+                        while (approachNote === notes[index - 1] || (index > 1 && approachNote === notes[index - 2])) {
+                            approachNote += (Math.random() < 0.5 ? 1 : -1);
+                        }
+                    }
+                    
+                    notes[index] = approachNote;
+                    isApproach[index] = true; 
+                }
+            }
+        }
+
+        for (let i = 0; i < measureCount; i++) {
+            let slots = [1,1,1,1,1,1,1,1];
+            
+            if (i < measureCount - 1) { 
+                const patterns = [
+                    [1,1,1,1,1,1,1,1], 
+                    [1,1,1,1,1,1,1,1], 
+                    [0,1,1,1,1,1,1,1], 
+                    [0,0,1,1,1,1,1,1], 
+                    [0,0,0,1,1,1,1,1], 
+                    [1,1,1,1,0,1,1,1], 
+                    [1,1,1,1,0,0,1,1], 
+                    [1,1,1,1,1,1,0,1], 
+                    [1,1,0,0,1,1,1,1], 
+                    [1,1,1,1,1,1,1,0]  
+                ];
+                slots = patterns[Math.floor(Math.random() * patterns.length)];
+
+                // オルタード/コンディミの小節は次へ連結するため、末尾を休符にしない
+                if (flatChords[i * 8 + 7].isAltered) {
+                    slots[7] = 1;
+                }
+            } else {
+                slots = [1,1,1,1, 0,0,0,0];
+            }
+
+            if (i > 0) {
+                let prevLastIndex = i * 8 - 1;
+                let prevWasAltered = flatChords[prevLastIndex].isAltered;
+
+                if (prevWasAltered || isApproach[prevLastIndex]) {
+                    // アプローチノートやテンション解決で小節を終える時は、次の小節の頭に休符を入れない
+                    slots[0] = 1;
+                } else if (!isRest[prevLastIndex]) {
+                    // 前の小節がコードトーンで終わった場合
+                    if (Math.random() < 0.05) {
+                        // 5%の確率で次の小節の頭を八分休符にする
+                        slots[0] = 0;
+                        slots[1] = 1; // 四分休符にならないよう裏拍は鳴らす
+                    } else {
+                        // 95%の確率で繋げる（休まない）
+                        slots[0] = 1;
+                    }
+                }
+            } else if (i === 0) {
+                if (Math.random() < 0.5) {
+                    slots[0] = 0;
+                    if (Math.random() < 0.5) slots[1] = 0;
+                }
+            }
+
+            // 小節内のコードチェンジでもオルタードなら連結させる
+            for (let s = 0; s < 7; s++) {
+                let currentIdx = i * 8 + s;
+                let nextIdx = i * 8 + s + 1;
+                if (flatChords[currentIdx].chord !== flatChords[nextIdx].chord) {
+                    if (flatChords[currentIdx].isAltered) {
+                        slots[s] = 1;
+                        slots[s + 1] = 1;
+                    }
+                }
+            }
+
+            for (let s = 0; s < 8; s++) {
+                if (slots[s] === 0) isRest[i * 8 + s] = true;
+            }
+        }
+
+        // 連続する休符が長くなりすぎないように調整（最大3スロット = 1.5拍まで）
+        let consecutiveRests = 0;
+        for (let i = 0; i < totalSlots; i++) {
+            if (isRest[i]) {
+                consecutiveRests++;
+                // 4つ連続の休符になりそうなら音符に戻してフレーズを再開させる
+                if (consecutiveRests > 3) {
+                    isRest[i] = false;
+                    consecutiveRests = 0;
+                }
+            } else {
+                consecutiveRests = 0;
+            }
+        }
+
+        // 拍ごとの三連符・四分音符フラグ
+        let isTriplet = new Array(measureCount * 4).fill(false);
+        let isQuarter = new Array(measureCount * 4).fill(false);
+        for (let i = 0; i < measureCount; i++) {
+            let maxBeat = (i === measureCount - 1) ? 2 : 4; // 最後の小節は最初の2拍だけ判定
+            for (let beat = 0; beat < maxBeat; beat++) {
+                let idx1 = i * 8 + beat * 2;
+                let idx2 = i * 8 + beat * 2 + 1;
+                
+                // 休符がない拍（8分音符が2つ連続する場所）に対して確率で三連符化
+                if (!isRest[idx1] && !isRest[idx2]) {
+                    // 確率を5%に下げ、かつ元の2音が同音ではない場合のみ三連符を生成
+                    if (Math.random() < 0.05 && notes[idx1] !== notes[idx2]) { 
+                        isTriplet[i * 4 + beat] = true;
+                    }
                 }
                 
-                let suffix = duration || (is16th ? "/" : "");
-                return prefix + note + suffix;
-            };
-
-            if (slot.length === 1) {
-                notes = processNote(slot[0]);
-            } else if (slot[0].length === 4) {
-                notes = slot.map(s => processNote(s)).join("");
-            } else if (slot.length === 6) {
-                let noteArr = slot.map(s => processNote(s, true));
-                notes = "(6" + noteArr.join("");
-            } else if (slot.length === 3) {
-                let noteArr = slot.map(s => processNote(s, false));
-                notes = "(3" + noteArr.join("");
-            } else if (slot.length === 2 || slot.length === 4) {
-                let is16th = slot.length === 4;
-                let noteArr = slot.map(s => processNote(s, is16th));
-                notes = noteArr.join("");
-            } else {
-                notes = "z2";
+                // 三連符にならない場合で、拍の頭が休符でないなら、0.5%の確率で四分音符化
+                if (!isTriplet[i * 4 + beat] && !isRest[idx1]) {
+                    if (Math.random() < 0.005) { 
+                        isQuarter[i * 4 + beat] = true;
+                    }
+                }
             }
-            
-            return { notes, words: wordsArr.join(" ") };
         }
 
-        function skeletonToAbc(skeleton, difficulty, feel, isTradeMode) {
-            let notesStr = "";
-            let wordsStr = "w: ";
-            
-            if (!skeleton) return "";
+        let abcDisplay = headerDisplay;
+        let abcAudio = headerAudio;
 
-            for (let bar = 0; bar < 4; bar++) {
-                let barNotes = [];
-                let barWords = [];
+        let abcV1 = ""; 
+        let audioV1 = "[V: 1] "; 
+        let audioV2 = "[V: 2] "; 
 
-                for (let beat = 0; beat < 4; beat++) {
-                    const { key, isCrash, variationIndex } = skeleton[bar][beat];
-                    const feelConfig = MOTIF_LIBRARY[feel];
-                    const keyConfig = feelConfig[key] || feelConfig['rest'];
+        for (let i = 0; i < measureCount; i++) {
+          let abcMeasureV1 = "";
+          let abcMeasureV2 = "";
+          let measureAccidentalsV1 = {}; 
+          let measureAccidentalsV2 = {};
+
+          let chordsInMeasure = (chords[i] || "Cmaj7").split(/\s+/).filter(c => c.length > 0);
+          if (chordsInMeasure.length === 0) chordsInMeasure = ["Cmaj7"];
+
+          let dynamicsV2 = (i === 0) ? "!ppp! " : "";
+
+          // 伴奏生成
+          if (i === measureCount - 1) {
+              abcMeasureV2 += dynamicsV2 + getAbcChord(chordsInMeasure[0], measureAccidentalsV2) + "8 |]";
+          } else {
+              if (chordsInMeasure.length === 1) {
+                  abcMeasureV2 += dynamicsV2 + getAbcChord(chordsInMeasure[0], measureAccidentalsV2) + "8";
+              } else {
+                  let c1 = getAbcChord(chordsInMeasure[0], measureAccidentalsV2);
+                  let c2 = getAbcChord(chordsInMeasure[1], measureAccidentalsV2);
+                  abcMeasureV2 += dynamicsV2 + c1 + "4 " + c2 + "4";
+              }
+              abcMeasureV2 += " | ";
+          }
+
+          // メロディ生成
+          if (i === measureCount - 1) {
+             let lastChord = flatChords[i * 8].chord;
+             
+             // 最後の小節: 最初の2拍をフレーズとして描画する
+             for (let beat = 0; beat < 2; beat++) {
+                let index1 = i * 8 + beat * 2;
+                let index2 = i * 8 + beat * 2 + 1;
+                
+                if (beat === 0) abcMeasureV1 += `"${chordsInMeasure[0]}"`;
+
+                if (isTriplet[i * 4 + beat]) {
+                    let n1 = notes[index1];
+                    let n3 = notes[index2];
+                    let n2;
+                    let diff = n3 - n1;
                     
-                    let targetDifficulty = difficulty;
-                    if (feel === 'swing' && difficulty === 'extreme') targetDifficulty = 'advanced';
+                    if (Math.abs(diff) <= 2) {
+                        n2 = n1 + (diff > 0 ? -1 : 1);
+                        if (Math.random() < 0.5) n2 = n3 + (diff > 0 ? 1 : -1);
+                    } else {
+                        if (Math.random() < 0.5) {
+                            n2 = n3 + (diff > 0 ? -1 : 1);
+                        } else {
+                            n2 = Math.round((n1 + n3) / 2);
+                        }
+                    }
                     
-                    const motifOptions = keyConfig[targetDifficulty] || keyConfig['basic'];
-                    let motifDef = motifOptions[variationIndex % motifOptions.length];
-                    
-                    // --- タム出現率の制限ロジックを緩和 (35%程度にアップ) ---
-                    const hasToms = motifDef.some(step => step.some(part => part === 'e' || part === 'A'));
-                    
-                    // タムが含まれる場合、variationIndexの下一桁が3以下の時(約35%〜40%の確率)はそのまま採用。
-                    // それ以外は Basic (スネア中心) に戻すことで、多すぎず少なすぎないバランスへ。
-                    if (hasToms && (variationIndex % 10 >= 4)) {
-                        const basicOptions = keyConfig['basic'];
-                        motifDef = basicOptions[variationIndex % basicOptions.length];
+                    if (n2 < 55) n2 += 12;
+                    if (n2 > 84) n2 -= 12;
+
+                    while (n2 === n1 || n2 === n3) {
+                        n2 += 1;
                     }
 
-                    let motif = JSON.parse(JSON.stringify(motifDef));
+                    abcMeasureV1 += "(3" + getAbcNote(n1, measureAccidentalsV1) + getAbcNote(n2, measureAccidentalsV1) + getAbcNote(n3, measureAccidentalsV1);
+                } else if (isQuarter[i * 4 + beat]) {
+                    // 四分音符として描画（ABC記法で長さを2倍にする）
+                    abcMeasureV1 += getAbcNote(notes[index1], measureAccidentalsV1) + "2";
+                } else {
+                    let str1 = isRest[index1] ? "z" : getAbcNote(notes[index1], measureAccidentalsV1);
+                    let str2 = isRest[index2] ? "z" : getAbcNote(notes[index2], measureAccidentalsV1);
                     
-                    if (difficulty !== 'basic' && isCrash && !motif[0][0].includes("z")) {
-                        motif[0][0] = "[!style=x!fF]";
-                        motif[0][1] = "R+K";
-                        motif[0][2] = "A";   
+                    if (isRest[index1] || isRest[index2]) {
+                        abcMeasureV1 += str1 + " " + str2;
+                    } else {
+                        abcMeasureV1 += str1 + str2;
                     }
-
-                    let { notes, words } = slotToNotesAndWords(motif);
-                    barNotes.push(notes);
-                    if (words) barWords.push(words);
                 }
+                
+                let breakBeam = false;
+                if (beat === 1) breakBeam = true; 
+                if (isTriplet[i * 4 + beat] || isQuarter[i * 4 + beat]) breakBeam = true; 
+                if (beat < 1 && (isTriplet[i * 4 + beat + 1] || isQuarter[i * 4 + beat + 1])) breakBeam = true; 
+                if (beat < 1 && !isQuarter[i * 4 + beat] && (isRest[index2] || isRest[i * 8 + (beat + 1) * 2])) breakBeam = true;
 
-                notesStr += barNotes.join(" ") + " | ";
-                wordsStr += barWords.join(" ") + " | ";
-            }
-
-            if (isTradeMode) {
-                notesStr = notesStr.slice(0, -3) + " |\n";
-                wordsStr += "\n";
-                const emptyBar = "z2 z2 z2 z2";
-                notesStr += `${emptyBar} | ${emptyBar} | ${emptyBar} | ${emptyBar} |] `;
-                wordsStr += " | | | |";
-            } else {
-                notesStr = notesStr.slice(0, -3) + " |] ";
-            }
-
-            return notesStr + "\n" + wordsStr;
-        }
-
-        function buildAbcString(abcBody, feel) {
-            return `X:1
-T:D.R.O.P. Solo Etude
-M:4/4
-L:1/8
-Q:1/4=90
-K:perc
-%%MIDI channel 10
-%%MIDI drummap f 49
-%%MIDI drummap e 45
-%%MIDI drummap c 38
-%%MIDI drummap A 43
-%%MIDI drummap F 36
-%%stretchlast 1
-%%vocalfont sans-serif 16
-%%stafflines 5
-` + abcBody;
-        }
-
-        const App = () => {
-            const [difficulty, setDifficulty] = useState('basic');
-            const [feel, setFeel] = useState('straight');
-            const [isTradeMode, setIsTradeMode] = useState(false);
-            const [skeleton, setSkeleton] = useState(null);
-            const [abcString, setAbcString] = useState("");
-            const [visualObj, setVisualObj] = useState(null);
-            
-            const scoreRef = useRef(null);
-            const audioContainerRef = useRef(null);
-            const synthControlRef = useRef(null);
-
-            useEffect(() => {
-                generateNewSkeleton();
-                if (feel === 'swing' && difficulty === 'extreme') {
-                    setDifficulty('advanced');
-                }
-            }, [feel]);
-
-            const generateNewSkeleton = () => {
-                const keys = Object.keys(MOTIF_LIBRARY[feel]);
-                const weightedKeys = [];
-                keys.forEach(k => {
-                    if (k === 'rest') weightedKeys.push(k);
-                    else weightedKeys.push(k, k, k);
+                if (breakBeam) abcMeasureV1 += " ";
+             }
+             
+             // 3拍目の頭（解決・着地音）を計算して、2分音符として長めに伸ばして終わる
+             let tones = getChordTones(lastChord);
+             let availableTones = tones.length > 1 ? tones.slice(1) : tones;
+             // 着地直前の音（2拍目の裏）を取得
+             let prevNote = 64;
+             if (!isRest[i * 8 + 3]) prevNote = notes[i * 8 + 3];
+             else if (!isRest[i * 8 + 2]) prevNote = notes[i * 8 + 2];
+             
+             let closest = availableTones[0] + 12;
+             let minDist = 999;
+             for(let oct = -1; oct <= 1; oct++) {
+                availableTones.forEach(t => {
+                    let n = t + (oct * 12) + 12; 
+                    if (n >= 55 && n <= 84) { 
+                        let dist = Math.abs(n - prevNote);
+                        // 着地音が直前の音と同音になるのを防ぐ
+                        if (n === prevNote) dist += 1000;
+                        if (dist < minDist) {
+                           minDist = dist;
+                           closest = n;
+                        }
+                    }
                 });
+             }
+             abcMeasureV1 += getAbcNote(closest, measureAccidentalsV1) + "4 |]";
+             
+          } else {
+             for (let beat = 0; beat < 4; beat++) {
+                let index1 = i * 8 + beat * 2;
+                let index2 = i * 8 + beat * 2 + 1;
+                
+                if (beat === 0) abcMeasureV1 += `"${chordsInMeasure[0]}"`;
+                if (beat === 2 && chordsInMeasure.length >= 2) abcMeasureV1 += `"${chordsInMeasure[1]}"`;
 
-                let newSkeleton = [];
-                for (let bar = 0; bar < 4; bar++) {
-                    let barSkeleton = [];
-                    for (let beat = 0; beat < 4; beat++) {
-                        let isCrash = ((bar === 0 || bar === 2) && beat === 0 && Math.random() > 0.3);
-                        let key = weightedKeys[Math.floor(Math.random() * weightedKeys.length)];
-                        if (isCrash && key === 'rest') key = 'acc_1'; 
-                        
-                        let variationIndex = Math.floor(Math.random() * 100);
-                        barSkeleton.push({ key, isCrash, variationIndex });
+                if (isTriplet[i * 4 + beat]) {
+                    // 三連符の生成（同音連打を完全に排除したロジック）
+                    let n1 = notes[index1];
+                    let n3 = notes[index2]; // 条件判定により n1 !== n3 が保証されている
+                    let n2;
+                    let diff = n3 - n1;
+                    
+                    if (Math.abs(diff) <= 2) {
+                        // 音程が近い場合は外側を回る刺繍音（ターン）的アプローチ
+                        n2 = n1 + (diff > 0 ? -1 : 1);
+                        if (Math.random() < 0.5) n2 = n3 + (diff > 0 ? 1 : -1);
+                    } else {
+                        // 音程が離れている場合は間を埋めるか、ターゲットへ半音アプローチ
+                        if (Math.random() < 0.5) {
+                            n2 = n3 + (diff > 0 ? -1 : 1);
+                        } else {
+                            n2 = Math.round((n1 + n3) / 2);
+                        }
                     }
-                    newSkeleton.push(barSkeleton);
-                }
-                setSkeleton(newSkeleton);
-            };
+                    
+                    if (n2 < 55) n2 += 12;
+                    if (n2 > 84) n2 -= 12;
 
-            useEffect(() => {
-                if (skeleton) {
-                    const body = skeletonToAbc(skeleton, difficulty, feel, isTradeMode);
-                    if (body) {
-                        setAbcString(buildAbcString(body, feel));
+                    // 万が一前後の音と被った場合は強制的にずらす
+                    while (n2 === n1 || n2 === n3) {
+                        n2 += 1;
+                    }
+
+                    abcMeasureV1 += "(3" + getAbcNote(n1, measureAccidentalsV1) + getAbcNote(n2, measureAccidentalsV1) + getAbcNote(n3, measureAccidentalsV1);
+                } else if (isQuarter[i * 4 + beat]) {
+                    // 四分音符として描画（ABC記法で長さを2倍にする）
+                    abcMeasureV1 += getAbcNote(notes[index1], measureAccidentalsV1) + "2";
+                } else {
+                    let str1 = isRest[index1] ? "z" : getAbcNote(notes[index1], measureAccidentalsV1);
+                    let str2 = isRest[index2] ? "z" : getAbcNote(notes[index2], measureAccidentalsV1);
+                    
+                    // 休符が絡む場合は連桁(ビーム)を切断するためにスペースを入れる
+                    if (isRest[index1] || isRest[index2]) {
+                        abcMeasureV1 += str1 + " " + str2;
+                    } else {
+                        abcMeasureV1 += str1 + str2;
                     }
                 }
-            }, [skeleton, difficulty, feel, isTradeMode]);
+                
+                let breakBeam = false;
+                if (beat === 1) breakBeam = true; 
+                if (isTriplet[i * 4 + beat] || isQuarter[i * 4 + beat]) breakBeam = true; 
+                if (beat < 3 && (isTriplet[i * 4 + beat + 1] || isQuarter[i * 4 + beat + 1])) breakBeam = true; 
+                // 次の拍との間も、休符が絡むなら連桁を切断
+                if (beat < 3 && !isQuarter[i * 4 + beat] && (isRest[index2] || isRest[i * 8 + (beat + 1) * 2])) breakBeam = true;
 
-            useEffect(() => {
-                if (abcString && scoreRef.current) {
-                    const rendered = ABCJS.renderAbc(scoreRef.current, abcString, {
-                        responsive: 'resize',
-                        add_classes: true,
-                        staffwidth: 900,
-                        scale: 1.3, 
-                        paddingtop: 15,
-                        paddingbottom: 40
-                    });
-                    setVisualObj(rendered[0]);
-                }
-            }, [abcString]);
+                if (breakBeam) abcMeasureV1 += " ";
+             }
+             abcMeasureV1 += " | ";
+          }
 
-            useEffect(() => {
-                if (visualObj && ABCJS.synth.supportsAudio() && audioContainerRef.current) {
-                    audioContainerRef.current.innerHTML = "";
-                    const controller = new ABCJS.synth.SynthController();
-                    controller.load(audioContainerRef.current, null, {
-                        displayLoop: true, displayRestart: true, displayPlay: true, displayProgress: true, displayWarp: true
-                    });
-                    controller.disable(true);
-                    const synth = new ABCJS.synth.CreateSynth();
-                    synth.init({ visualObj: visualObj }).then(() => {
-                        controller.setTune(visualObj, false, { chordsOff: true, midiChannel: 10 });
-                    }).catch(console.error);
-                    synthControlRef.current = controller;
-                }
-            }, [visualObj]);
+          abcV1 += abcMeasureV1;
+          audioV1 += abcMeasureV1;
+          audioV2 += abcMeasureV2;
 
-            return (
-                <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-lg p-6 mt-4">
-                    <div className="text-center mb-6">
-                        <h1 className="text-3xl font-bold text-zinc-800">D.R.O.P. Solo Etude</h1>
+          if ((i + 1) % 4 === 0 || i === measureCount - 1) {
+              abcDisplay += abcV1 + "\n";
+              abcV1 = "";
+
+              abcAudio += audioV1 + "\n" + audioV2 + "\n";
+              audioV1 = "[V: 1] ";
+              audioV2 = "[V: 2] ";
+          }
+        }
+
+        setAbcString(abcDisplay);
+        setAudioAbcString(abcAudio);
+      };
+
+      return (
+        <div className="min-h-screen bg-gray-50 text-gray-800 font-sans p-4 md:p-8">
+          <div className="max-w-5xl mx-auto space-y-6">
+            
+            <header className="flex items-center gap-3 border-b pb-4">
+              <div className="p-3 bg-blue-600 text-white rounded-xl shadow-sm">
+                <MusicIcon />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">Jazz Etude Generator</h1>
+                <p className="text-sm text-gray-500">コード進行からジャズのアドリブソロ（エチュード）を自動生成</p>
+              </div>
+            </header>
+
+            <div className="flex flex-col gap-6">
+              
+              <div className="w-full space-y-6 bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      小節数: {measureCount} 小節
+                    </label>
+                    <input 
+                      type="range" 
+                      min="4" 
+                      max="32" 
+                      step="4" 
+                      value={measureCount}
+                      onChange={handleMeasureCountChange}
+                      className="w-full accent-blue-600"
+                    />
+                    <div className="flex justify-between text-xs text-gray-400 mt-1">
+                      <span>4</span>
+                      <span>16</span>
+                      <span>32</span>
                     </div>
+                  </div>
 
-                    <div className="flex flex-col md:flex-row flex-wrap justify-center items-center gap-4 mb-6 bg-zinc-50 p-4 rounded-lg border border-zinc-200">
-                        <div className="flex gap-4 flex-wrap justify-center">
-                            <div className="flex bg-white rounded-md border border-zinc-300 overflow-hidden shadow-sm">
-                                <button onClick={() => setFeel('straight')} className={`px-4 py-2 text-sm font-medium transition-colors ${feel === 'straight' ? 'bg-indigo-600 text-white' : 'hover:bg-zinc-100 text-zinc-700'}`}>Straight</button>
-                                <button onClick={() => setFeel('swing')} className={`px-4 py-2 text-sm font-medium transition-colors ${feel === 'swing' ? 'bg-indigo-600 text-white' : 'hover:bg-zinc-100 text-zinc-700'}`}>Swing</button>
-                            </div>
-
-                            <div className="flex bg-white rounded-md border border-zinc-300 overflow-hidden shadow-sm">
-                                <button onClick={() => setDifficulty('basic')} className={`px-4 py-2 text-sm font-medium transition-colors ${difficulty === 'basic' ? 'bg-indigo-600 text-white' : 'hover:bg-zinc-100 text-zinc-700'}`}>1. Basic</button>
-                                <button onClick={() => setDifficulty('advanced')} className={`px-4 py-2 text-sm font-medium transition-colors ${difficulty === 'advanced' ? 'bg-indigo-600 text-white' : 'hover:bg-zinc-100 text-zinc-700'}`}>2. Orchestration</button>
-                                {feel === 'straight' && (
-                                    <button onClick={() => setDifficulty('extreme')} className={`px-4 py-2 text-sm font-medium transition-colors ${difficulty === 'extreme' ? 'bg-indigo-600 text-white' : 'hover:bg-zinc-100 text-zinc-700'}`}>3. Extreme (IDM)</button>
-                                )}
-                            </div>
-                        </div>
-
-                        <div className="flex gap-4 items-center">
-                            <label className="flex items-center space-x-2 cursor-pointer bg-white px-4 py-2 rounded-md border border-zinc-300 shadow-sm hover:bg-zinc-50 transition-colors">
-                                <input type="checkbox" checked={isTradeMode} onChange={(e) => setIsTradeMode(e.target.checked)} className="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500" />
-                                <span className="text-sm font-medium text-zinc-700">🎧 4-Bar Trade</span>
-                            </label>
-                            <button onClick={generateNewSkeleton} className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded-md shadow-sm transition-colors">🔄 New Phrasing</button>
-                        </div>
+                  <div>
+                    <span className="block text-sm font-semibold text-gray-700 mb-2">プリセット進行</span>
+                    <div className="flex flex-wrap gap-2">
+                      <button onClick={() => setPreset('251')} className="px-3 py-1.5 text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition">2-5-1 (4小節)</button>
+                      <button onClick={() => setPreset('blues')} className="px-3 py-1.5 text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition">ブルース (12小節)</button>
+                      <button onClick={() => setPreset('autumn')} className="px-3 py-1.5 text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition">枯葉風 (8小節)</button>
                     </div>
-
-                    <div className="bg-white border-2 border-zinc-100 rounded-lg p-4 overflow-x-auto min-h-[150px]">
-                        <div ref={scoreRef}></div>
-                    </div>
-
-                    <div className="mt-4 bg-slate-200 border border-slate-300 rounded-lg p-3 w-full max-w-2xl mx-auto shadow-inner">
-                        <div ref={audioContainerRef} className="w-full"></div>
-                    </div>
-
-                    <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="bg-indigo-50 border border-indigo-100 rounded-lg p-5">
-                            <h3 className="font-bold text-indigo-900 mb-3 border-b border-indigo-200 pb-2">💡 練習のヒント</h3>
-                            <ul className="text-sm text-indigo-800 space-y-3">
-                                <li><strong>タムの出現率(アップ):</strong> 前回の制限を緩め、アクセント箇所の約35%〜40%程度でハイタム（上）やフロアタム（下）が絡むようにしました。ドラムセット全体を使ったより音楽的な移動が楽しめます。</li>
-                                <li><strong>Trade Mode:</strong> 🎧 4-Bar Tradeにチェックを入れると、フレーズの後に4小節の休みが追加され、アプリとの4バース交換練習ができます。</li>
-                            </ul>
-                        </div>
-                        <div className="bg-zinc-50 border border-zinc-200 rounded-lg p-5">
-                            <h3 className="font-bold text-zinc-800 mb-3 border-b border-indigo-200 pb-2">🥁 手順の読み方</h3>
-                            <ul className="text-sm text-zinc-600 space-y-1 font-mono bg-white p-2 rounded border border-zinc-100">
-                                <li><strong>R / L / K :</strong> アクセント (強)</li>
-                                <li><strong>r / l :</strong> ゴーストノート (弱)</li>
-                            </ul>
-                        </div>
-                    </div>
+                  </div>
                 </div>
-            );
-        };
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
-    </script>
+                <hr className="border-gray-100" />
+
+                <div>
+                  <span className="block text-sm font-semibold text-gray-700 mb-2">コード進行</span>
+                  <p className="text-xs text-gray-500 mb-3">※1小節に2つコードを入れる場合は「Dm7 G7」のようにスペースで区切ってください。</p>
+                  
+                  <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-8 gap-2 max-h-64 overflow-y-auto pr-2 custom-scrollbar">
+                    {Array.from({ length: measureCount }).map((_, i) => (
+                      <div key={i} className="flex flex-col">
+                        <span className="text-[10px] text-gray-400 font-mono">{i + 1}</span>
+                        <input 
+                          type="text" 
+                          value={chords[i]} 
+                          onChange={(e) => handleChordChange(i, e.target.value)}
+                          placeholder="例: Cmaj7"
+                          className="border border-gray-200 p-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition shadow-sm"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <button 
+                  onClick={generateEtude}
+                  className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 rounded-xl shadow-sm transition active:scale-[0.98]"
+                >
+                  <RefreshIcon />
+                  エチュードを生成
+                </button>
+              </div>
+
+              <div className="w-full bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
+                <div className="bg-gray-50 border-b border-gray-100 px-4 py-3 flex justify-between items-center">
+                  <span className="text-sm font-semibold text-gray-700">生成された五線譜</span>
+                  <span className="text-xs text-gray-500 px-2 py-1 bg-gray-200 rounded-md">Bebop Style</span>
+                </div>
+                
+                <div className={abcString ? "bg-white border-b border-gray-100 px-4 py-3 flex justify-center w-full" : "hidden"}>
+                  <div ref={audioRef} className="w-full max-w-3xl"></div>
+                </div>
+                
+                <div className="p-4 pb-12 overflow-x-auto flex-1 flex justify-center">
+                  {abcString ? (
+                    <div id="paper" className="min-w-full lg:min-w-[800px] flex justify-center"></div>
+                  ) : (
+                    <div className="h-full flex items-center justify-center text-gray-400 flex-col gap-3 min-h-[300px]">
+                      <MusicIcon />
+                      <p>「エチュードを生成」ボタンを押してください</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
 </body>
 </html>
