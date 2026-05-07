@@ -179,7 +179,6 @@
         return map[noteStr] || 0;
       };
 
-      // コード名からコードトーン（MIDIノート番号の配列）を取得
       const getChordTones = (chordStr) => {
         if (!chordStr) return [0, 4, 7, 11].map(i => 60 + i); 
 
@@ -361,11 +360,13 @@
         
         for (let index = 1; index < totalSlots; index++) {
             let prevTarget = notes[index - 1];
-            let prevPrevTarget = index > 1 ? notes[index - 2] : null; 
+            let prevPrevTarget = index >= 2 ? notes[index - 2] : null; 
+            let prevPrevPrevTarget = index >= 3 ? notes[index - 3] : null; 
+            let currentChord = flatChords[index].chord;
             let chordTones = flatChords[index].tones;
             
             let target = prevTarget;
-            let minDist = 999;
+            let minDist = 9999;
             
             let preferJump = Math.random() < 0.2;
 
@@ -374,12 +375,14 @@
                     let n = ct + (oct * 12);
                     if (n >= 55 && n <= 84) {
                         let dist = Math.abs(n - prevTarget);
+                        // 同音連打を完全に防ぐ強力なペナルティ
+                        if (n === prevTarget) dist += 1000; 
                         
-                        if (n === prevTarget) dist += 10; 
+                        // ドレドレのような狭い往復（2つ前の音と同じ）を強力に防ぐ
+                        if (n === prevPrevTarget) dist += 500;
                         
-                        if (n === prevPrevTarget) dist += 15;
-                        
-                        if (index > 2 && n === notes[index - 3]) dist += 5;
+                        // 3つ前の音と同じになるのも防ぐ
+                        if (n === prevPrevPrevTarget) dist += 50;
                         
                         if (preferJump) {
                             let jumpScore = Math.abs(dist - 7); 
@@ -388,7 +391,7 @@
                                 target = n;
                             }
                         } else {
-                            dist += Math.random() * 5; 
+                            dist += Math.random() * 3; 
                             if (dist < minDist) {
                                 minDist = dist;
                                 target = n;
@@ -403,10 +406,9 @@
         let isApproach = new Array(totalSlots).fill(false);
         for (let index = 0; index < totalSlots - 1; index++) {
             let isChordChange = flatChords[index].chord !== flatChords[index + 1].chord;
-            let isEndOfMeasure = (index % 8 === 7);
             
-            if (isChordChange || isEndOfMeasure) {
-                // オルタード/コンディミ使用時は必ずアプローチ化（テンションの解決）
+            // コードが変わるタイミングでのみアプローチノートを発生させる
+            if (isChordChange) {
                 let forceApproach = flatChords[index].isAltered;
 
                 if (forceApproach || Math.random() < 0.6) {
@@ -421,6 +423,13 @@
 
                     if (approachNote < 55) approachNote += 12;
                     if (approachNote > 84) approachNote -= 12;
+                    
+                    // アプローチノートが直前の音や2つ前の音と同音（往復）になるのを防ぐ
+                    if (index > 0) {
+                        while (approachNote === notes[index - 1] || (index > 1 && approachNote === notes[index - 2])) {
+                            approachNote += (Math.random() < 0.5 ? 1 : -1);
+                        }
+                    }
                     
                     notes[index] = approachNote;
                     isApproach[index] = true; 
@@ -456,19 +465,20 @@
 
             if (i > 0) {
                 let prevLastIndex = i * 8 - 1;
-                let prevSecondLastIndex = i * 8 - 2;
-                
                 let prevWasAltered = flatChords[prevLastIndex].isAltered;
 
-                if (prevWasAltered) {
-                    // 直前がオルタード系なら絶対に解決先の頭を鳴らす（休符にしない）
+                if (prevWasAltered || isApproach[prevLastIndex]) {
+                    // アプローチノートやテンション解決で小節を終える時は、次の小節の頭に休符を入れない
                     slots[0] = 1;
-                } else if (isApproach[prevLastIndex]) {
-                    slots[0] = 1;
-                } else if (!isRest[prevLastIndex] && !isRest[prevSecondLastIndex]) {
-                    if (Math.random() < 0.6) {
+                } else if (!isRest[prevLastIndex]) {
+                    // 前の小節がコードトーンで終わった場合
+                    if (Math.random() < 0.05) {
+                        // 5%の確率で次の小節の頭を八分休符にする
                         slots[0] = 0;
-                        if (Math.random() < 0.5) slots[1] = 0; 
+                        slots[1] = 1; // 四分休符にならないよう裏拍は鳴らす
+                    } else {
+                        // 95%の確率で繋げる（休まない）
+                        slots[0] = 1;
                     }
                 }
             } else if (i === 0) {
@@ -510,10 +520,11 @@
             }
         }
 
-        // 拍ごとの三連符フラグ
+        // 拍ごとの三連符・四分音符フラグ
         let isTriplet = new Array(measureCount * 4).fill(false);
+        let isQuarter = new Array(measureCount * 4).fill(false);
         for (let i = 0; i < measureCount; i++) {
-            let maxBeat = (i === measureCount - 1) ? 2 : 4; // 最後の小節は最初の2拍だけ三連符を判定
+            let maxBeat = (i === measureCount - 1) ? 2 : 4; // 最後の小節は最初の2拍だけ判定
             for (let beat = 0; beat < maxBeat; beat++) {
                 let idx1 = i * 8 + beat * 2;
                 let idx2 = i * 8 + beat * 2 + 1;
@@ -523,6 +534,13 @@
                     // 確率を5%に下げ、かつ元の2音が同音ではない場合のみ三連符を生成
                     if (Math.random() < 0.05 && notes[idx1] !== notes[idx2]) { 
                         isTriplet[i * 4 + beat] = true;
+                    }
+                }
+                
+                // 三連符にならない場合で、拍の頭が休符でないなら、0.5%の確率で四分音符化
+                if (!isTriplet[i * 4 + beat] && !isRest[idx1]) {
+                    if (Math.random() < 0.005) { 
+                        isQuarter[i * 4 + beat] = true;
                     }
                 }
             }
@@ -596,6 +614,9 @@
                     }
 
                     abcMeasureV1 += "(3" + getAbcNote(n1, measureAccidentalsV1) + getAbcNote(n2, measureAccidentalsV1) + getAbcNote(n3, measureAccidentalsV1);
+                } else if (isQuarter[i * 4 + beat]) {
+                    // 四分音符として描画（ABC記法で長さを2倍にする）
+                    abcMeasureV1 += getAbcNote(notes[index1], measureAccidentalsV1) + "2";
                 } else {
                     let str1 = isRest[index1] ? "z" : getAbcNote(notes[index1], measureAccidentalsV1);
                     let str2 = isRest[index2] ? "z" : getAbcNote(notes[index2], measureAccidentalsV1);
@@ -609,9 +630,9 @@
                 
                 let breakBeam = false;
                 if (beat === 1) breakBeam = true; 
-                if (isTriplet[i * 4 + beat]) breakBeam = true; 
-                if (beat < 1 && isTriplet[i * 4 + beat + 1]) breakBeam = true; 
-                if (beat < 1 && (isRest[index2] || isRest[i * 8 + (beat + 1) * 2])) breakBeam = true;
+                if (isTriplet[i * 4 + beat] || isQuarter[i * 4 + beat]) breakBeam = true; 
+                if (beat < 1 && (isTriplet[i * 4 + beat + 1] || isQuarter[i * 4 + beat + 1])) breakBeam = true; 
+                if (beat < 1 && !isQuarter[i * 4 + beat] && (isRest[index2] || isRest[i * 8 + (beat + 1) * 2])) breakBeam = true;
 
                 if (breakBeam) abcMeasureV1 += " ";
              }
@@ -630,8 +651,11 @@
                 availableTones.forEach(t => {
                     let n = t + (oct * 12) + 12; 
                     if (n >= 55 && n <= 84) { 
-                        if (Math.abs(n - prevNote) < minDist) {
-                           minDist = Math.abs(n - prevNote);
+                        let dist = Math.abs(n - prevNote);
+                        // 着地音が直前の音と同音になるのを防ぐ
+                        if (n === prevNote) dist += 1000;
+                        if (dist < minDist) {
+                           minDist = dist;
                            closest = n;
                         }
                     }
@@ -676,6 +700,9 @@
                     }
 
                     abcMeasureV1 += "(3" + getAbcNote(n1, measureAccidentalsV1) + getAbcNote(n2, measureAccidentalsV1) + getAbcNote(n3, measureAccidentalsV1);
+                } else if (isQuarter[i * 4 + beat]) {
+                    // 四分音符として描画（ABC記法で長さを2倍にする）
+                    abcMeasureV1 += getAbcNote(notes[index1], measureAccidentalsV1) + "2";
                 } else {
                     let str1 = isRest[index1] ? "z" : getAbcNote(notes[index1], measureAccidentalsV1);
                     let str2 = isRest[index2] ? "z" : getAbcNote(notes[index2], measureAccidentalsV1);
@@ -690,10 +717,10 @@
                 
                 let breakBeam = false;
                 if (beat === 1) breakBeam = true; 
-                if (isTriplet[i * 4 + beat]) breakBeam = true; 
-                if (beat < 3 && isTriplet[i * 4 + beat + 1]) breakBeam = true; 
+                if (isTriplet[i * 4 + beat] || isQuarter[i * 4 + beat]) breakBeam = true; 
+                if (beat < 3 && (isTriplet[i * 4 + beat + 1] || isQuarter[i * 4 + beat + 1])) breakBeam = true; 
                 // 次の拍との間も、休符が絡むなら連桁を切断
-                if (beat < 3 && (isRest[index2] || isRest[i * 8 + (beat + 1) * 2])) breakBeam = true;
+                if (beat < 3 && !isQuarter[i * 4 + beat] && (isRest[index2] || isRest[i * 8 + (beat + 1) * 2])) breakBeam = true;
 
                 if (breakBeam) abcMeasureV1 += " ";
              }
