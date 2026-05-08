@@ -811,7 +811,9 @@
                     let str1 = isRest[index1] ? "z" : getAbcNote(notes[index1], measureAccidentalsV1, flatChords[index1].chord);
                     let str2 = isRest[index2] ? "z" : getAbcNote(notes[index2], measureAccidentalsV1, flatChords[index2].chord);
                     
-                    if (isRest[index1] || isRest[index2]) {
+                    if (isRest[index1] && isRest[index2]) {
+                        abcMeasureV1 += "z2";
+                    } else if (isRest[index1] || isRest[index2]) {
                         abcMeasureV1 += str1 + " " + str2;
                     } else {
                         abcMeasureV1 += str1 + str2;
@@ -820,7 +822,7 @@
                 
                 let breakBeam = false;
                 if (beat === 1) breakBeam = true; 
-                if (isTriplet[i * 4 + beat] || isQuarter[i * 4 + beat]) breakBeam = true; 
+                if (isTriplet[i * 4 + beat] || isQuarter[i * 4 + beat] || (isRest[index1] && isRest[index2])) breakBeam = true; 
                 if (beat < 1 && (isTriplet[i * 4 + beat + 1] || isQuarter[i * 4 + beat + 1])) breakBeam = true; 
                 if (beat < 1 && !isQuarter[i * 4 + beat] && (isRest[index2] || isRest[i * 8 + (beat + 1) * 2])) breakBeam = true;
 
@@ -889,7 +891,9 @@
                     let str1 = isRest[index1] ? "z" : getAbcNote(notes[index1], measureAccidentalsV1, flatChords[index1].chord);
                     let str2 = isRest[index2] ? "z" : getAbcNote(notes[index2], measureAccidentalsV1, flatChords[index2].chord);
                     
-                    if (isRest[index1] || isRest[index2]) {
+                    if (isRest[index1] && isRest[index2]) {
+                        abcMeasureV1 += "z2";
+                    } else if (isRest[index1] || isRest[index2]) {
                         abcMeasureV1 += str1 + " " + str2;
                     } else {
                         abcMeasureV1 += str1 + str2;
@@ -898,7 +902,7 @@
                 
                 let breakBeam = false;
                 if (beat === 1) breakBeam = true; 
-                if (isTriplet[i * 4 + beat] || isQuarter[i * 4 + beat]) breakBeam = true; 
+                if (isTriplet[i * 4 + beat] || isQuarter[i * 4 + beat] || (isRest[index1] && isRest[index2])) breakBeam = true; 
                 if (beat < 3 && (isTriplet[i * 4 + beat + 1] || isQuarter[i * 4 + beat + 1])) breakBeam = true; 
                 if (beat < 3 && !isQuarter[i * 4 + beat] && (isRest[index2] || isRest[i * 8 + (beat + 1) * 2])) breakBeam = true;
 
