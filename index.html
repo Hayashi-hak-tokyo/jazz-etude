@@ -88,18 +88,8 @@
       </svg>
     );
 
-    // ジャズ・スタンダード曲のデータリスト
+    // ジャズ・スタンダード曲のデータリスト (A-Z順にソート済み)
     const standardSongs = [
-      {
-        title: "Autumn Leaves",
-        measures: 32,
-        chords: [
-          "Cm7", "F7", "Bbmaj7", "Ebmaj7", "Am7b5", "D7", "Gm7", "Gm7",
-          "Cm7", "F7", "Bbmaj7", "Ebmaj7", "Am7b5", "D7", "Gm7", "Gm7",
-          "Am7b5", "D7", "Gm7", "Gm7", "Cm7", "F7", "Bbmaj7", "Ebmaj7",
-          "Am7b5", "D7", "Gm7 C7", "Fm7 Bb7", "Ebmaj7", "Am7b5 D7", "Gm7", "Gm7"
-        ]
-      },
       {
         title: "All The Things You Are",
         measures: 36,
@@ -112,13 +102,13 @@
         ]
       },
       {
-        title: "There Will Never Be Another You",
+        title: "Autumn Leaves",
         measures: 32,
         chords: [
-          "Ebmaj7", "Ebmaj7", "Dm7b5", "G7", "Cm7", "Cm7", "Bbm7", "Eb7",
-          "Abmaj7", "Abmaj7", "Ebmaj7", "Ebmaj7", "Fm7", "Fm7", "Bb7", "Bb7",
-          "Ebmaj7", "Ebmaj7", "Dm7b5", "G7", "Cm7", "Cm7", "Bbm7", "Eb7",
-          "Abmaj7", "Db7", "Ebmaj7 C7", "Fm7 Bb7", "Ebmaj7", "Fm7", "Bb7", "Bb7"
+          "Cm7", "F7", "Bbmaj7", "Ebmaj7", "Am7b5", "D7", "Gm7", "Gm7",
+          "Cm7", "F7", "Bbmaj7", "Ebmaj7", "Am7b5", "D7", "Gm7", "Gm7",
+          "Am7b5", "D7", "Gm7", "Gm7", "Cm7", "F7", "Bbmaj7", "Ebmaj7",
+          "Am7b5", "D7", "Gm7 C7", "Fm7 Bb7", "Ebmaj7", "Am7b5 D7", "Gm7", "Gm7"
         ]
       },
       {
@@ -127,6 +117,26 @@
         chords: [
           "Cm7", "Cm7", "Fm7", "Fm7", "Dm7b5", "G7", "Cm7", "Cm7",
           "Ebm7", "Ab7", "Dbmaj7", "Dbmaj7", "Dm7b5", "G7", "Cm7", "Cm7"
+        ]
+      },
+      {
+        title: "Donna Lee",
+        measures: 32,
+        chords: [
+          "Abmaj7", "Abmaj7", "F7", "F7", "Bbm7", "Bbm7", "Bb7", "Bb7",
+          "Bbm7", "Eb7", "Abmaj7", "F7", "Bbm7", "C7", "Fm7", "C7",
+          "Fm7", "Fm7", "C7", "C7", "Fm7", "Fm7", "Eb7", "Eb7",
+          "Abmaj7", "Abmaj7", "F7", "F7", "Bbm7", "Edim7", "Abmaj7 F7", "Bbm7 Eb7"
+        ]
+      },
+      {
+        title: "Giant Steps",
+        measures: 16,
+        chords: [
+          "Bmaj7 D7", "Gmaj7 Bb7", "Ebmaj7", "Am7 D7",
+          "Gmaj7 Bb7", "Ebmaj7 F#7", "Bmaj7", "Fm7 Bb7",
+          "Ebmaj7", "Am7 D7", "Gmaj7", "C#m7 F#7",
+          "Bmaj7", "Fm7 Bb7", "Ebmaj7", "C#m7 F#7"
         ]
       },
       {
@@ -140,6 +150,18 @@
         ]
       },
       {
+        title: "I'll Remember April",
+        measures: 48,
+        chords: [
+          "Gmaj7", "Gmaj7", "Gm7", "Gm7", "Gmaj7", "Gmaj7", "Gm7", "Gm7",
+          "Am7", "D7", "Gmaj7", "Gmaj7", "Bm7b5", "E7", "Am7", "D7",
+          "Gmaj7", "Gmaj7", "Gm7", "Gm7", "Gmaj7", "Gmaj7", "Gm7", "Gm7",
+          "Am7", "D7", "Gmaj7", "Gmaj7", "Bm7b5", "E7", "Am7", "D7",
+          "Bm7", "Bm7", "Bbm7", "Eb7", "Am7", "D7", "Gmaj7", "Gmaj7",
+          "Bm7", "Bm7", "Bbm7", "Eb7", "Am7", "Am7", "D7", "D7"
+        ]
+      },
+      {
         title: "Impressions",
         measures: 32,
         chords: [
@@ -150,13 +172,27 @@
         ]
       },
       {
-        title: "You'd Be So Nice To Come Home To",
-        measures: 32,
+        title: "Inner Urge",
+        measures: 24,
         chords: [
-          "Am7", "Am7", "Bm7b5", "E7", "Am7", "Am7", "Bm7b5", "E7",
-          "Am7", "A7", "Dm7", "Dm7", "D7", "D7", "G7", "E7",
-          "Am7", "Am7", "Bm7b5", "E7", "Am7", "Am7", "Bm7b5", "E7",
-          "Fmaj7", "Fm7", "Am7", "D7", "Bm7b5", "E7", "Am7", "Am7"
+          "F#m7b5", "F#m7b5", "F#m7b5", "F#m7b5", "Fmaj7", "Fmaj7", "Fmaj7", "Fmaj7",
+          "Ebmaj7", "Ebmaj7", "Ebmaj7", "Ebmaj7", "Dbmaj7", "Dbmaj7", "Dbmaj7", "Dbmaj7",
+          "Gmaj7", "Gmaj7", "Gbmaj7", "Gbmaj7", "Fmaj7", "Fmaj7", "Emaj7", "Emaj7"
+        ]
+      },
+      {
+        title: "Moment's Notice",
+        measures: 38,
+        chords: [
+          "Em7 A7", "Fm7 Bb7", "Ebmaj7", "Abm7 Db7", 
+          "Dm7 G7", "Ebm7 Ab7", "Dbmaj7", "Dm7 G7",
+          "Cm7", "Bbm7 Eb7", "Abmaj7", "Abm7 Db7", 
+          "Gm7", "Abm7 Db7", "Gbmaj7", "Fm7 Bb7",
+          "Em7 A7", "Fm7 Bb7", "Ebmaj7", "Abm7 Db7", 
+          "Dm7 G7", "Ebm7 Ab7", "Dbmaj7", "Dm7 G7",
+          "Cm7", "Bbm7 Eb7", "Abmaj7", "Abm7 Db7", 
+          "Gm7 C7", "Fm7 Bb7", "Ebmaj7", "Fm7 Bb7",
+          "Ebmaj7", "Fm7 Bb7", "Gm7 Fm7", "Ebmaj7 Fm7", "Gm7 Fm7", "Ebmaj7"
         ]
       },
       {
@@ -179,18 +215,6 @@
         ]
       },
       {
-        title: "I'll Remember April",
-        measures: 48,
-        chords: [
-          "Gmaj7", "Gmaj7", "Gm7", "Gm7", "Gmaj7", "Gmaj7", "Gm7", "Gm7",
-          "Am7", "D7", "Gmaj7", "Gmaj7", "Bm7b5", "E7", "Am7", "D7",
-          "Gmaj7", "Gmaj7", "Gm7", "Gm7", "Gmaj7", "Gmaj7", "Gm7", "Gm7",
-          "Am7", "D7", "Gmaj7", "Gmaj7", "Bm7b5", "E7", "Am7", "D7",
-          "Bm7", "Bm7", "Bbm7", "Eb7", "Am7", "D7", "Gmaj7", "Gmaj7",
-          "Bm7", "Bm7", "Bbm7", "Eb7", "Am7", "Am7", "D7", "D7"
-        ]
-      },
-      {
         title: "Stella by Starlight",
         measures: 32,
         chords: [
@@ -201,13 +225,13 @@
         ]
       },
       {
-        title: "Donna Lee",
+        title: "There Will Never Be Another You",
         measures: 32,
         chords: [
-          "Abmaj7", "Abmaj7", "F7", "F7", "Bbm7", "Bbm7", "Bb7", "Bb7",
-          "Bbm7", "Eb7", "Abmaj7", "F7", "Bbm7", "C7", "Fm7", "C7",
-          "Fm7", "Fm7", "C7", "C7", "Fm7", "Fm7", "Eb7", "Eb7",
-          "Abmaj7", "Abmaj7", "F7", "F7", "Bbm7", "Edim7", "Abmaj7 F7", "Bbm7 Eb7"
+          "Ebmaj7", "Ebmaj7", "Dm7b5", "G7", "Cm7", "Cm7", "Bbm7", "Eb7",
+          "Abmaj7", "Abmaj7", "Ebmaj7", "Ebmaj7", "Fm7", "Fm7", "Bb7", "Bb7",
+          "Ebmaj7", "Ebmaj7", "Dm7b5", "G7", "Cm7", "Cm7", "Bbm7", "Eb7",
+          "Abmaj7", "Db7", "Ebmaj7 C7", "Fm7 Bb7", "Ebmaj7", "Fm7", "Bb7", "Bb7"
         ]
       },
       {
@@ -221,35 +245,24 @@
         ]
       },
       {
-        title: "Inner urge",
-        measures: 24,
+        title: "You'd Be So Nice To Come Home To",
+        measures: 32,
         chords: [
-          "F#m7b5", "F#m7b5", "F#m7b5", "F#m7b5", "Fmaj7", "Fmaj7", "Fmaj7", "Fmaj7",
-          "Ebmaj7", "Ebmaj7", "Ebmaj7", "Ebmaj7", "Dbmaj7", "Dbmaj7", "Dbmaj7", "Dbmaj7",
-          "Gmaj7", "Gmaj7", "Gbmaj7", "Gbmaj7", "Fmaj7", "Fmaj7", "Emaj7", "Emaj7"
-        ]
-      },
-      {
-        title: "Giant Steps",
-        measures: 16,
-        chords: [
-          "Bmaj7 D7", "Gmaj7 Bb7", "Ebmaj7", "Am7 D7",
-          "Gmaj7 Bb7", "Ebmaj7 F#7", "Bmaj7", "Fm7 Bb7",
-          "Ebmaj7", "Am7 D7", "Gmaj7", "C#m7 F#7",
-          "Bmaj7", "Fm7 Bb7", "Ebmaj7", "C#m7 F#7"
+          "Am7", "Am7", "Bm7b5", "E7", "Am7", "Am7", "Bm7b5", "E7",
+          "Am7", "A7", "Dm7", "Dm7", "D7", "D7", "G7", "E7",
+          "Am7", "Am7", "Bm7b5", "E7", "Am7", "Am7", "Bm7b5", "E7",
+          "Fmaj7", "Fm7", "Am7", "D7", "Bm7b5", "E7", "Am7", "Am7"
         ]
       }
     ];
 
     function App() {
       const [measureCount, setMeasureCount] = useState(8);
-      // 長い曲に対応するため配列の最大サイズを64に拡張
       const [chords, setChords] = useState(Array(64).fill(""));
       const [abcString, setAbcString] = useState("");
       const [audioAbcString, setAudioAbcString] = useState("");
       const [abcjsLoaded, setAbcjsLoaded] = useState(false);
       
-      // スタンダード曲選択モーダルの状態管理
       const [isModalOpen, setIsModalOpen] = useState(false);
 
       const audioRef = useRef(null);
@@ -347,13 +360,12 @@
         setChords(newChords);
       };
 
-      // スタンダード曲選択時の処理
       const selectStandardSong = (song) => {
         setMeasureCount(song.measures);
         const newChords = Array(64).fill("");
         song.chords.forEach((c, i) => { newChords[i] = c; });
         setChords(newChords);
-        setIsModalOpen(false); // モーダルを閉じる
+        setIsModalOpen(false); 
       };
 
       const getMidiOffset = (noteStr) => {
@@ -480,7 +492,6 @@
                  if (flatRoots.includes(root)) {
                      isFlatKey = true;
                  } else if (currentChord.includes('m') && !currentChord.includes('maj')) {
-                     // マイナーコードはフラット系の調になりやすい (Cm, Gm, Dmなど)
                      if (['C', 'G', 'D'].includes(root)) {
                          isFlatKey = true;
                      }
@@ -793,12 +804,12 @@
                         n2 += 1;
                     }
 
-                    abcMeasureV1 += "(3" + getAbcNote(n1, measureAccidentalsV1) + getAbcNote(n2, measureAccidentalsV1) + getAbcNote(n3, measureAccidentalsV1);
+                    abcMeasureV1 += "(3" + getAbcNote(n1, measureAccidentalsV1, flatChords[index1].chord) + getAbcNote(n2, measureAccidentalsV1, flatChords[index1].chord) + getAbcNote(n3, measureAccidentalsV1, flatChords[index2].chord);
                 } else if (isQuarter[i * 4 + beat]) {
-                    abcMeasureV1 += getAbcNote(notes[index1], measureAccidentalsV1) + "2";
+                    abcMeasureV1 += getAbcNote(notes[index1], measureAccidentalsV1, flatChords[index1].chord) + "2";
                 } else {
-                    let str1 = isRest[index1] ? "z" : getAbcNote(notes[index1], measureAccidentalsV1);
-                    let str2 = isRest[index2] ? "z" : getAbcNote(notes[index2], measureAccidentalsV1);
+                    let str1 = isRest[index1] ? "z" : getAbcNote(notes[index1], measureAccidentalsV1, flatChords[index1].chord);
+                    let str2 = isRest[index2] ? "z" : getAbcNote(notes[index2], measureAccidentalsV1, flatChords[index2].chord);
                     
                     if (isRest[index1] || isRest[index2]) {
                         abcMeasureV1 += str1 + " " + str2;
@@ -944,7 +955,7 @@
                       type="range" 
                       min="4" 
                       max="64" 
-                      step="4" 
+                      step="2" 
                       value={measureCount}
                       onChange={handleMeasureCountChange}
                       className="w-full accent-blue-600"
