@@ -26,10 +26,15 @@
     .abcjs-note { fill: #1f2937; }
     .abcjs-staff { fill: #1f2937; }
     
+    /* 再生中の音符を青色でハイライト */
+    .abcjs-highlight { fill: #2563eb !important; } 
+    
     #paper { padding-bottom: 20px; }
     #paper svg { 
       overflow: visible !important; 
       margin-bottom: 40px !important; 
+      width: 100% !important;
+      height: auto !important;
     }
 
     .abcjs-inline-audio { margin: 0; padding: 10px; display: flex; align-items: center; gap: 8px; justify-content: center; }
@@ -309,18 +314,21 @@
       // 楽譜とプレイヤーの描画・初期化
       useEffect(() => {
         if (abcjsLoaded && abcString && window.ABCJS) {
+          // staffwidthを固定せず、常にresizeを有効にすることで
+          // 親のコンテナ幅に合わせて自動的に綺麗に縮小・拡大させる
           window.ABCJS.renderAbc("paper", abcString, {
             responsive: "resize",
             add_classes: true,
-            staffwidth: 800,
             paddingtop: 10,
             paddingbottom: 30,
-            paddingleft: 20,
-            paddingright: 20,
+            paddingleft: 10,
+            paddingright: 10,
           });
 
           const currentAudioString = isBackingOnly ? backingAbcString : audioAbcString;
-          const visualObjForAudio = window.ABCJS.renderAbc("*", currentAudioString, {})[0];
+          const visualObjForAudio = window.ABCJS.renderAbc("audio-paper", currentAudioString, {
+            add_classes: true
+          })[0];
 
           if (window.ABCJS.synth.supportsAudio() && audioRef.current) {
             if (synthRef.current) {
@@ -329,8 +337,56 @@
             }
             audioRef.current.innerHTML = "";
 
+            const cursorControl = {
+              onStart: function() {
+                const svg = document.querySelector("#paper svg");
+                if (svg) {
+                  const notes = svg.querySelectorAll(".abcjs-highlight");
+                  notes.forEach(note => note.classList.remove("abcjs-highlight"));
+                }
+              },
+              onEvent: function(ev) {
+                if (!ev || (ev.measureStart && ev.left === null)) return; 
+
+                const displaySvg = document.querySelector("#paper svg");
+                const audioSvg = document.querySelector("#audio-paper svg");
+                if (!displaySvg || !audioSvg) return;
+                
+                const oldNotes = displaySvg.querySelectorAll(".abcjs-highlight");
+                oldNotes.forEach(note => note.classList.remove("abcjs-highlight"));
+                
+                if (ev.elements && Array.isArray(ev.elements)) {
+                  const audioNotes = Array.from(audioSvg.querySelectorAll(".abcjs-v0 .abcjs-note, .abcjs-v0 .abcjs-rest"));
+                  const displayNotes = Array.from(displaySvg.querySelectorAll(".abcjs-note, .abcjs-rest"));
+
+                  ev.elements.forEach(element => {
+                    if (!element) return;
+                    let index = audioNotes.indexOf(element);
+                    
+                    if (index === -1 && element.closest) {
+                        const parentGroup = element.closest('.abcjs-note, .abcjs-rest');
+                        if (parentGroup) {
+                            index = audioNotes.indexOf(parentGroup);
+                        }
+                    }
+
+                    if (index !== -1 && displayNotes[index]) {
+                      displayNotes[index].classList.add("abcjs-highlight");
+                    }
+                  });
+                }
+              },
+              onFinished: function() {
+                const svg = document.querySelector("#paper svg");
+                if (svg) {
+                  const notes = svg.querySelectorAll(".abcjs-highlight");
+                  notes.forEach(note => note.classList.remove("abcjs-highlight"));
+                }
+              }
+            };
+
             const synthControl = new window.ABCJS.synth.SynthController();
-            synthControl.load(audioRef.current, null, {
+            synthControl.load(audioRef.current, cursorControl, {
               displayLoop: true,
               displayRestart: true,
               displayPlay: true,
@@ -489,6 +545,10 @@
       };
 
       const generateEtude = () => {
+        // プレビュー枠などの狭い画面幅を考慮し、800px未満なら2小節で改行する
+        const isMobile = window.innerWidth < 800;
+        const measuresPerLine = isMobile ? 2 : 4;
+
         let headerDisplay = "X: 1\n";
         headerDisplay += "T: Jazz Solo Etude\n";
         headerDisplay += "M: 4/4\n";
@@ -496,7 +556,6 @@
         headerDisplay += "Q: 1/4=140\n"; 
         headerDisplay += "K: C\n"; 
 
-        // 3パート（メロディ、コード、ベース）の再生用ヘッダー
         let headerAudio = "X: 1\n";
         headerAudio += "T: Jazz Solo Etude\n";
         headerAudio += "M: 4/4\n";
@@ -505,14 +564,14 @@
         headerAudio += "K: C\n"; 
         headerAudio += "%%staves (1 2 3)\n";
         headerAudio += "V: 1 clef=treble\n";
-        headerAudio += "%%MIDI program 0\n"; // アコースティックピアノ(メロディ)
+        headerAudio += "%%MIDI program 0\n"; 
         headerAudio += "%%MIDI control 7 127\n"; 
         headerAudio += "V: 2 clef=treble\n";
-        headerAudio += "%%MIDI program 4\n"; // エレクトリックピアノ(コード伴奏)
+        headerAudio += "%%MIDI program 4\n"; 
         headerAudio += "%%MIDI control 7 60\n"; 
         headerAudio += "V: 3 clef=bass\n";
-        headerAudio += "%%MIDI program 39\n"; // シンセベース2 (アタックが固くフィルターの少ないベース)
-        headerAudio += "%%MIDI control 7 100\n"; // ベースの音量を上げてよく聞こえるように
+        headerAudio += "%%MIDI program 39\n"; 
+        headerAudio += "%%MIDI control 7 100\n"; 
 
         let headerBacking = "X: 1\n";
         headerBacking += "T: Jazz Solo Etude (Backing Track)\n";
@@ -523,15 +582,14 @@
         headerBacking += "%%staves (1 2 3)\n";
         headerBacking += "V: 1 clef=treble\n";
         headerBacking += "%%MIDI program 0\n"; 
-        headerBacking += "%%MIDI control 7 0\n"; // メロディをミュート
+        headerBacking += "%%MIDI control 7 0\n"; 
         headerBacking += "V: 2 clef=treble\n";
         headerBacking += "%%MIDI program 4\n"; 
         headerBacking += "%%MIDI control 7 60\n";
         headerBacking += "V: 3 clef=bass\n";
-        headerBacking += "%%MIDI program 39\n"; // シンセベース2
+        headerBacking += "%%MIDI program 39\n"; 
         headerBacking += "%%MIDI control 7 100\n";
 
-        // バグ修正版：低いオクターブでも正しくカンマ（C,,）を出力し、低音域までサポートする
         const getAbcNote = (midi, measureAccidentalsRef, currentChord) => {
           let isFlatKey = false;
           if (currentChord) {
@@ -566,7 +624,6 @@
           
           let abcName = baseName;
           
-          // 低いオクターブの修正ロジック (C1~C2帯域をカバー)
           if (octave <= 3) {
               for (let k = 4; k > octave; k--) abcName += ",";
           } else if (octave === 4) {
@@ -592,18 +649,15 @@
         const getAbcChord = (chordStr, measureAccidentalsRef) => {
           let baseChordStr = chordStr.replace(/alt/g, '7'); 
           const tones = getChordTones(baseChordStr);
-          // ベース音が別パートで鳴るのでルートを省き、和音の濁りを防ぐ
           const upperTones = tones.length > 1 ? tones.slice(1) : tones;
           const abcNotes = upperTones.map(midi => getAbcNote(midi - 12, measureAccidentalsRef, chordStr));
           return "[" + abcNotes.join("") + "]";
         };
 
-        // ベースライン用の音符を取得する関数（ルート音のみ）
         const getAbcBassBeat = (chordStr, measureAccidentalsRef) => {
           const match = chordStr.match(/^[A-G][#b]?/);
           if (!match) return "z";
           let root = match[0];
-          // 正しく C,, (MIDI 24相当・C1帯域) などを生成するための基準値
           let rootMidi = 36 + getMidiOffset(root); 
           return getAbcNote(rootMidi, measureAccidentalsRef, chordStr);
         };
@@ -900,7 +954,6 @@
           let dynamicsV2 = (i === 0) ? "!mp! " : "";
           let dynamicsV3 = (i === 0) ? "!mf! " : "";
 
-          // コード伴奏 (V:2) と ベース伴奏 (V:3 白玉) の生成
           if (i === measureCount - 1) {
               abcMeasureV2 += dynamicsV2 + getAbcChord(chordsInMeasure[0], measureAccidentalsV2) + "8 |]";
               let b1 = getAbcBassBeat(chordsInMeasure[0], measureAccidentalsV3);
@@ -1067,24 +1120,22 @@
           fullAccompaniment += abcMeasureV2;
           fullBass += abcMeasureV3;
 
-          if ((i + 1) % 4 === 0 || i === measureCount - 1) {
+          // 画面幅が800px未満（スマホ等）の場合は2小節で折り返す
+          if ((i + 1) % measuresPerLine === 0 || i === measureCount - 1) {
               fullMelody += "\n";
               fullAccompaniment += "\n";
               fullBass += "\n";
           }
         }
 
-        // 表示用文字列
         setAbcString(headerDisplay + fullMelody);
         
-        // 全て再生用文字列
         let finalAudioAbc = headerAudio;
         finalAudioAbc += "[V: 1]\n" + fullMelody;
         finalAudioAbc += "[V: 2]\n" + fullAccompaniment;
         finalAudioAbc += "[V: 3]\n" + fullBass;
         setAudioAbcString(finalAudioAbc);
 
-        // 伴奏のみ用文字列
         let finalBackingAbc = headerBacking;
         finalBackingAbc += "[V: 1]\n" + fullMelody;
         finalBackingAbc += "[V: 2]\n" + fullAccompaniment;
@@ -1215,9 +1266,13 @@
                   <div ref={audioRef} className="w-full max-w-3xl"></div>
                 </div>
                 
-                <div className="p-4 overflow-x-auto flex-1 print:p-0 print:overflow-visible print:w-full">
+                {/* 楽譜が巨大化しないように max-width を設定 */}
+                <div className="p-2 md:p-4 flex-1 print:p-0 print:w-full flex justify-center w-full">
                   {abcString ? (
-                    <div id="paper" className="min-w-[800px] print:min-w-0 print:w-full"></div>
+                    <div className="w-full max-w-[850px] overflow-hidden">
+                      <div id="paper" className="w-full print:w-full"></div>
+                      <div id="audio-paper" style={{ position: 'absolute', top: '-9999px', visibility: 'hidden' }}></div>
+                    </div>
                   ) : (
                     <div className="h-full flex items-center justify-center text-gray-400 flex-col gap-3 min-h-[300px] print:hidden">
                       <MusicIcon />
