@@ -96,7 +96,6 @@
       </svg>
     );
 
-    // ジャズ・スタンダード曲のデータリスト (A-Z順にソート済み)
     const standardSongs = [
       {
         title: "All The Things You Are",
@@ -267,10 +266,14 @@
     function App() {
       const [measureCount, setMeasureCount] = useState(8);
       const [chords, setChords] = useState(Array(64).fill(""));
+      const [currentSongTitle, setCurrentSongTitle] = useState("");
+      
       const [abcString, setAbcString] = useState("");
       const [audioAbcString, setAudioAbcString] = useState("");
-      const [abcjsLoaded, setAbcjsLoaded] = useState(false);
+      const [backingAbcString, setBackingAbcString] = useState("");
+      const [isBackingOnly, setIsBackingOnly] = useState(false);
       
+      const [abcjsLoaded, setAbcjsLoaded] = useState(false);
       const [isModalOpen, setIsModalOpen] = useState(false);
 
       const audioRef = useRef(null);
@@ -303,6 +306,7 @@
         document.body.appendChild(script);
       }, []);
 
+      // 楽譜とプレイヤーの描画・初期化
       useEffect(() => {
         if (abcjsLoaded && abcString && window.ABCJS) {
           window.ABCJS.renderAbc("paper", abcString, {
@@ -315,25 +319,33 @@
             paddingright: 20,
           });
 
-          if (window.ABCJS.synth.supportsAudio() && audioRef.current && audioAbcString) {
-            const visualObjForAudio = window.ABCJS.renderAbc("*", audioAbcString, {})[0];
+          const currentAudioString = isBackingOnly ? backingAbcString : audioAbcString;
+          const visualObjForAudio = window.ABCJS.renderAbc("*", currentAudioString, {})[0];
 
-            if (!synthRef.current) {
-              synthRef.current = new window.ABCJS.synth.SynthController();
-              synthRef.current.load(audioRef.current, null, {
-                displayLoop: true,
-                displayRestart: true,
-                displayPlay: true,
-                displayProgress: true,
-                displayWarp: true 
-              });
+          if (window.ABCJS.synth.supportsAudio() && audioRef.current) {
+            if (synthRef.current) {
+              synthRef.current.pause();
+              synthRef.current.disable(true);
             }
-            synthRef.current.setTune(visualObjForAudio, false, {
+            audioRef.current.innerHTML = "";
+
+            const synthControl = new window.ABCJS.synth.SynthController();
+            synthControl.load(audioRef.current, null, {
+              displayLoop: true,
+              displayRestart: true,
+              displayPlay: true,
+              displayProgress: true,
+              displayWarp: true 
+            });
+            
+            synthControl.setTune(visualObjForAudio, false, {
               chordsOff: true 
             }).catch(console.error);
+
+            synthRef.current = synthControl;
           }
         }
-      }, [abcString, audioAbcString, abcjsLoaded]);
+      }, [abcString, audioAbcString, backingAbcString, isBackingOnly, abcjsLoaded]);
 
       useEffect(() => {
         if (abcjsLoaded && chords[0] !== "" && abcString === "") {
@@ -349,6 +361,7 @@
         const newChords = [...chords];
         newChords[index] = value;
         setChords(newChords);
+        setCurrentSongTitle(""); 
       };
 
       const setPreset = (type) => {
@@ -366,6 +379,7 @@
           autumn.forEach((c, i) => newChords[i] = c);
         }
         setChords(newChords);
+        setCurrentSongTitle(""); 
       };
 
       const selectStandardSong = (song) => {
@@ -373,6 +387,7 @@
         const newChords = Array(64).fill("");
         song.chords.forEach((c, i) => { newChords[i] = c; });
         setChords(newChords);
+        setCurrentSongTitle(song.title); 
         setIsModalOpen(false); 
       };
 
@@ -481,15 +496,42 @@
         headerDisplay += "Q: 1/4=140\n"; 
         headerDisplay += "K: C\n"; 
 
-        let headerAudio = headerDisplay;
-        headerAudio += "%%staves (1 2)\n";
+        // 3パート（メロディ、コード、ベース）の再生用ヘッダー
+        let headerAudio = "X: 1\n";
+        headerAudio += "T: Jazz Solo Etude\n";
+        headerAudio += "M: 4/4\n";
+        headerAudio += "L: 1/8\n";
+        headerAudio += "Q: 1/4=140\n"; 
+        headerAudio += "K: C\n"; 
+        headerAudio += "%%staves (1 2 3)\n";
         headerAudio += "V: 1 clef=treble\n";
-        headerAudio += "%%MIDI program 0\n"; 
+        headerAudio += "%%MIDI program 0\n"; // アコースティックピアノ(メロディ)
         headerAudio += "%%MIDI control 7 127\n"; 
-        headerAudio += "V: 2 clef=bass\n";
-        headerAudio += "%%MIDI program 48\n"; 
-        headerAudio += "%%MIDI control 7 30\n"; 
+        headerAudio += "V: 2 clef=treble\n";
+        headerAudio += "%%MIDI program 4\n"; // エレクトリックピアノ(コード伴奏)
+        headerAudio += "%%MIDI control 7 60\n"; 
+        headerAudio += "V: 3 clef=bass\n";
+        headerAudio += "%%MIDI program 39\n"; // シンセベース2 (アタックが固くフィルターの少ないベース)
+        headerAudio += "%%MIDI control 7 100\n"; // ベースの音量を上げてよく聞こえるように
 
+        let headerBacking = "X: 1\n";
+        headerBacking += "T: Jazz Solo Etude (Backing Track)\n";
+        headerBacking += "M: 4/4\n";
+        headerBacking += "L: 1/8\n";
+        headerBacking += "Q: 1/4=140\n"; 
+        headerBacking += "K: C\n"; 
+        headerBacking += "%%staves (1 2 3)\n";
+        headerBacking += "V: 1 clef=treble\n";
+        headerBacking += "%%MIDI program 0\n"; 
+        headerBacking += "%%MIDI control 7 0\n"; // メロディをミュート
+        headerBacking += "V: 2 clef=treble\n";
+        headerBacking += "%%MIDI program 4\n"; 
+        headerBacking += "%%MIDI control 7 60\n";
+        headerBacking += "V: 3 clef=bass\n";
+        headerBacking += "%%MIDI program 39\n"; // シンセベース2
+        headerBacking += "%%MIDI control 7 100\n";
+
+        // バグ修正版：低いオクターブでも正しくカンマ（C,,）を出力し、低音域までサポートする
         const getAbcNote = (midi, measureAccidentalsRef, currentChord) => {
           let isFlatKey = false;
           if (currentChord) {
@@ -523,11 +565,17 @@
           const targetAcc = defaultAccidentals[noteClass];
           
           let abcName = baseName;
-          if (octave === 3) abcName += ",";
-          else if (octave === 5) abcName = abcName.toLowerCase();
-          else if (octave >= 6) {
-              abcName = abcName.toLowerCase();
-              for(let k=6; k<=octave; k++) abcName += "'";
+          
+          // 低いオクターブの修正ロジック (C1~C2帯域をカバー)
+          if (octave <= 3) {
+              for (let k = 4; k > octave; k--) abcName += ",";
+          } else if (octave === 4) {
+              abcName = baseName;
+          } else if (octave === 5) {
+              abcName = baseName.toLowerCase();
+          } else if (octave >= 6) {
+              abcName = baseName.toLowerCase();
+              for (let k = 5; k < octave; k++) abcName += "'";
           }
           
           const key = baseName + octave;
@@ -544,8 +592,20 @@
         const getAbcChord = (chordStr, measureAccidentalsRef) => {
           let baseChordStr = chordStr.replace(/alt/g, '7'); 
           const tones = getChordTones(baseChordStr);
-          const abcNotes = tones.map(midi => getAbcNote(midi - 12, measureAccidentalsRef, chordStr));
+          // ベース音が別パートで鳴るのでルートを省き、和音の濁りを防ぐ
+          const upperTones = tones.length > 1 ? tones.slice(1) : tones;
+          const abcNotes = upperTones.map(midi => getAbcNote(midi - 12, measureAccidentalsRef, chordStr));
           return "[" + abcNotes.join("") + "]";
+        };
+
+        // ベースライン用の音符を取得する関数（ルート音のみ）
+        const getAbcBassBeat = (chordStr, measureAccidentalsRef) => {
+          const match = chordStr.match(/^[A-G][#b]?/);
+          if (!match) return "z";
+          let root = match[0];
+          // 正しく C,, (MIDI 24相当・C1帯域) などを生成するための基準値
+          let rootMidi = 36 + getMidiOffset(root); 
+          return getAbcNote(rootMidi, measureAccidentalsRef, chordStr);
         };
 
         let flatChords = [];
@@ -579,6 +639,11 @@
         let firstTones = flatChords[0].tones;
         notes[0] = firstTones[0] + 12; 
         
+        let isImpressions = currentSongTitle === "Impressions";
+        let isOut = false;
+        let outCounter = 0;
+        let usePenta = true;
+        
         for (let index = 1; index < totalSlots; index++) {
             let prevTarget = notes[index - 1];
             let prevPrevTarget = index >= 2 ? notes[index - 2] : null; 
@@ -586,44 +651,113 @@
             let currentChord = flatChords[index].chord;
             let chordTones = flatChords[index].tones;
             
-            let target = prevTarget;
-            let minDist = 9999;
-            
-            let preferJump = Math.random() < 0.2;
+            if (isImpressions) {
+                let isChordChange = index > 0 && currentChord !== flatChords[index-1].chord;
+                
+                if (isChordChange) {
+                    isOut = false;
+                    outCounter = 0;
+                }
 
-            for(let oct = -1; oct <= 1; oct++) {
-                chordTones.forEach(ct => {
-                    let n = ct + (oct * 12);
-                    if (n >= 55 && n <= 84) {
-                        let dist = Math.abs(n - prevTarget);
-                        if (n === prevTarget) dist += 1000; 
-                        if (n === prevPrevTarget) dist += 500;
-                        if (n === prevPrevPrevTarget) dist += 50;
-                        
-                        if (preferJump) {
-                            let jumpScore = Math.abs(dist - 7); 
-                            if (jumpScore < minDist) {
-                                minDist = jumpScore;
-                                target = n;
-                            }
-                        } else {
-                            dist += Math.random() * 3; 
-                            if (dist < minDist) {
-                                minDist = dist;
-                                target = n;
-                            }
+                if (!isOut && outCounter === 0 && Math.random() < 0.08) {
+                    isOut = true;
+                    outCounter = 4 + Math.floor(Math.random() * 6); 
+                }
+                if (isOut) {
+                    outCounter--;
+                    if (outCounter <= 0) isOut = false;
+                }
+                
+                if (index % 8 === 0) {
+                    usePenta = Math.random() < 0.7; 
+                }
+
+                let rootMidi = 60 + getMidiOffset(currentChord.match(/^[A-G][#b]?/)[0]);
+                if (isOut) rootMidi += 1; 
+
+                let intervals = usePenta ? [0, 3, 5, 7, 10] : [0, 2, 3, 5, 7, 9, 10];
+                let scaleTones = [];
+                for(let oct = -2; oct <= 2; oct++){
+                    intervals.forEach(i => scaleTones.push(rootMidi + i + oct * 12));
+                }
+                scaleTones = scaleTones.filter(n => n >= 55 && n <= 84).sort((a,b)=>a-b);
+
+                let target = prevTarget;
+                let minDist = 9999;
+                
+                let preferFourth = Math.random() < 0.4; 
+                let preferStep = Math.random() < 0.5; 
+
+                for (let i = 0; i < scaleTones.length; i++) {
+                    let n = scaleTones[i];
+                    let dist = Math.abs(n - prevTarget);
+                    
+                    if (n === prevTarget) dist += 1000; 
+                    if (n === prevPrevTarget) dist += 500;
+                    if (n === prevPrevPrevTarget) dist += 50;
+                    
+                    if (preferFourth) {
+                        let jumpScore = Math.abs(dist - 5); 
+                        if (jumpScore < minDist) {
+                            minDist = jumpScore;
+                            target = n;
+                        }
+                    } else if (preferStep) {
+                        dist += Math.random() * 2; 
+                        if (dist < minDist) {
+                            minDist = dist;
+                            target = n;
+                        }
+                    } else {
+                        let jumpScore = Math.abs(dist - 7); 
+                        if (jumpScore < minDist) {
+                            minDist = jumpScore;
+                            target = n;
                         }
                     }
-                });
+                }
+                notes[index] = target;
+
+            } else {
+                let target = prevTarget;
+                let minDist = 9999;
+                
+                let preferJump = Math.random() < 0.2;
+
+                for(let oct = -1; oct <= 1; oct++) {
+                    chordTones.forEach(ct => {
+                        let n = ct + (oct * 12);
+                        if (n >= 55 && n <= 84) {
+                            let dist = Math.abs(n - prevTarget);
+                            if (n === prevTarget) dist += 1000; 
+                            if (n === prevPrevTarget) dist += 500;
+                            if (n === prevPrevPrevTarget) dist += 50;
+                            
+                            if (preferJump) {
+                                let jumpScore = Math.abs(dist - 7); 
+                                if (jumpScore < minDist) {
+                                    minDist = jumpScore;
+                                    target = n;
+                                }
+                            } else {
+                                dist += Math.random() * 3; 
+                                if (dist < minDist) {
+                                    minDist = dist;
+                                    target = n;
+                                }
+                            }
+                        }
+                    });
+                }
+                notes[index] = target;
             }
-            notes[index] = target;
         }
 
         let isApproach = new Array(totalSlots).fill(false);
         for (let index = 0; index < totalSlots - 1; index++) {
             let isChordChange = flatChords[index].chord !== flatChords[index + 1].chord;
             
-            if (isChordChange) {
+            if (isChordChange && !isImpressions) {
                 let forceApproach = flatChords[index].isAltered;
 
                 if (forceApproach || Math.random() < 0.6) {
@@ -748,35 +882,45 @@
             }
         }
 
-        let abcDisplay = headerDisplay;
-        let abcAudio = headerAudio;
-
-        let abcV1 = ""; 
-        let audioV1 = "[V: 1] "; 
-        let audioV2 = "[V: 2] "; 
+        let fullMelody = ""; 
+        let fullAccompaniment = "";
+        let fullBass = "";
 
         for (let i = 0; i < measureCount; i++) {
           let abcMeasureV1 = "";
           let abcMeasureV2 = "";
+          let abcMeasureV3 = "";
           let measureAccidentalsV1 = {}; 
           let measureAccidentalsV2 = {};
+          let measureAccidentalsV3 = {};
 
           let chordsInMeasure = (chords[i] || "Cmaj7").split(/\s+/).filter(c => c.length > 0);
           if (chordsInMeasure.length === 0) chordsInMeasure = ["Cmaj7"];
 
-          let dynamicsV2 = (i === 0) ? "!ppp! " : "";
+          let dynamicsV2 = (i === 0) ? "!mp! " : "";
+          let dynamicsV3 = (i === 0) ? "!mf! " : "";
 
+          // コード伴奏 (V:2) と ベース伴奏 (V:3 白玉) の生成
           if (i === measureCount - 1) {
               abcMeasureV2 += dynamicsV2 + getAbcChord(chordsInMeasure[0], measureAccidentalsV2) + "8 |]";
+              let b1 = getAbcBassBeat(chordsInMeasure[0], measureAccidentalsV3);
+              abcMeasureV3 += dynamicsV3 + b1 + "8 |]";
           } else {
               if (chordsInMeasure.length === 1) {
                   abcMeasureV2 += dynamicsV2 + getAbcChord(chordsInMeasure[0], measureAccidentalsV2) + "8";
+                  let b1 = getAbcBassBeat(chordsInMeasure[0], measureAccidentalsV3);
+                  abcMeasureV3 += dynamicsV3 + b1 + "8";
               } else {
                   let c1 = getAbcChord(chordsInMeasure[0], measureAccidentalsV2);
                   let c2 = getAbcChord(chordsInMeasure[1], measureAccidentalsV2);
                   abcMeasureV2 += dynamicsV2 + c1 + "4 " + c2 + "4";
+                  
+                  let b1 = getAbcBassBeat(chordsInMeasure[0], measureAccidentalsV3);
+                  let b2 = getAbcBassBeat(chordsInMeasure[1], measureAccidentalsV3);
+                  abcMeasureV3 += dynamicsV3 + b1 + "4 " + b2 + "4";
               }
               abcMeasureV2 += " | ";
+              abcMeasureV3 += " | ";
           }
 
           if (i === measureCount - 1) {
@@ -919,29 +1063,39 @@
              abcMeasureV1 += " | ";
           }
 
-          abcV1 += abcMeasureV1;
-          audioV1 += abcMeasureV1;
-          audioV2 += abcMeasureV2;
+          fullMelody += abcMeasureV1;
+          fullAccompaniment += abcMeasureV2;
+          fullBass += abcMeasureV3;
 
           if ((i + 1) % 4 === 0 || i === measureCount - 1) {
-              abcDisplay += abcV1 + "\n";
-              abcV1 = "";
-
-              abcAudio += audioV1 + "\n" + audioV2 + "\n";
-              audioV1 = "[V: 1] ";
-              audioV2 = "[V: 2] ";
+              fullMelody += "\n";
+              fullAccompaniment += "\n";
+              fullBass += "\n";
           }
         }
 
-        setAbcString(abcDisplay);
-        setAudioAbcString(abcAudio);
+        // 表示用文字列
+        setAbcString(headerDisplay + fullMelody);
+        
+        // 全て再生用文字列
+        let finalAudioAbc = headerAudio;
+        finalAudioAbc += "[V: 1]\n" + fullMelody;
+        finalAudioAbc += "[V: 2]\n" + fullAccompaniment;
+        finalAudioAbc += "[V: 3]\n" + fullBass;
+        setAudioAbcString(finalAudioAbc);
+
+        // 伴奏のみ用文字列
+        let finalBackingAbc = headerBacking;
+        finalBackingAbc += "[V: 1]\n" + fullMelody;
+        finalBackingAbc += "[V: 2]\n" + fullAccompaniment;
+        finalBackingAbc += "[V: 3]\n" + fullBass;
+        setBackingAbcString(finalBackingAbc);
       };
 
       return (
         <div className="min-h-screen bg-gray-50 print:bg-white text-gray-800 font-sans p-4 md:p-8 print:p-0">
           <div className="max-w-5xl mx-auto space-y-6 print:space-y-0">
             
-            {/* ヘッダー */}
             <header className="flex items-center gap-3 border-b pb-4 print:hidden">
               <div className="p-3 bg-blue-600 text-white rounded-xl shadow-sm">
                 <MusicIcon />
@@ -954,11 +1108,9 @@
 
             <div className="flex flex-col gap-6 print:block">
               
-              {/* 上パネル: 設定と入力 */}
               <div className="w-full space-y-6 bg-white p-5 rounded-2xl shadow-sm border border-gray-100 print:hidden">
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* 小節数設定 */}
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
                       小節数: {measureCount} 小節
@@ -979,7 +1131,6 @@
                     </div>
                   </div>
 
-                  {/* プリセット */}
                   <div>
                     <span className="block text-sm font-semibold text-gray-700 mb-2">プリセット進行</span>
                     <div className="flex flex-wrap gap-2">
@@ -988,7 +1139,6 @@
                       <button onClick={() => setPreset('autumn')} className="px-3 py-1.5 text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition">枯葉風 (8小節)</button>
                     </div>
                     
-                    {/* スタンダード曲選択ボタン */}
                     <div className="mt-3">
                       <button 
                         onClick={() => setIsModalOpen(true)} 
@@ -1003,7 +1153,6 @@
 
                 <hr className="border-gray-100" />
 
-                {/* コード入力グリッド */}
                 <div>
                   <span className="block text-sm font-semibold text-gray-700 mb-2">コード進行</span>
                   <p className="text-xs text-gray-500 mb-3">※1小節に2つコードを入れる場合は「Dm7 G7」のようにスペースで区切ってください。</p>
@@ -1024,7 +1173,6 @@
                   </div>
                 </div>
 
-                {/* 生成ボタン */}
                 <button 
                   onClick={generateEtude}
                   className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 rounded-xl shadow-sm transition active:scale-[0.98]"
@@ -1034,7 +1182,6 @@
                 </button>
               </div>
 
-              {/* 下パネル: 楽譜表示 */}
               <div className="w-full bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col print:shadow-none print:border-none print:rounded-none">
                 <div className="bg-gray-50 border-b border-gray-100 px-4 py-3 flex justify-between items-center print:hidden">
                   <div className="flex items-center gap-3">
@@ -1053,8 +1200,18 @@
                   )}
                 </div>
                 
-                {/* オーディオプレイヤーUI */}
-                <div className={abcString ? "bg-white border-b border-gray-100 px-4 py-3 flex justify-center w-full print:hidden" : "hidden print:hidden"}>
+                <div className={abcString ? "bg-white border-b border-gray-100 px-4 py-3 flex flex-col items-center gap-2 w-full print:hidden" : "hidden print:hidden"}>
+                  <div className="w-full max-w-3xl flex justify-start pl-2">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        checked={isBackingOnly}
+                        onChange={(e) => setIsBackingOnly(e.target.checked)}
+                        className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                      />
+                      <span className="text-sm font-medium text-gray-700">伴奏のみ再生（練習モード）</span>
+                    </label>
+                  </div>
                   <div ref={audioRef} className="w-full max-w-3xl"></div>
                 </div>
                 
@@ -1073,7 +1230,6 @@
             </div>
           </div>
 
-          {/* スタンダード曲選択モーダル */}
           {isModalOpen && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 backdrop-blur-sm p-4">
               <div className="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[85vh] overflow-hidden flex flex-col animate-[fadeIn_0.2s_ease-out]">
