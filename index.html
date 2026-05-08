@@ -81,21 +81,205 @@
       </svg>
     );
 
+    const CloseIcon = () => (
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <line x1="18" y1="6" x2="6" y2="18"></line>
+        <line x1="6" y1="6" x2="18" y2="18"></line>
+      </svg>
+    );
+
+    // ジャズ・スタンダード曲のデータリスト
+    const standardSongs = [
+      {
+        title: "Autumn Leaves",
+        measures: 32,
+        chords: [
+          "Cm7", "F7", "Bbmaj7", "Ebmaj7", "Am7b5", "D7", "Gm7", "Gm7",
+          "Cm7", "F7", "Bbmaj7", "Ebmaj7", "Am7b5", "D7", "Gm7", "Gm7",
+          "Am7b5", "D7", "Gm7", "Gm7", "Cm7", "F7", "Bbmaj7", "Ebmaj7",
+          "Am7b5", "D7", "Gm7 C7", "Fm7 Bb7", "Ebmaj7", "Am7b5 D7", "Gm7", "Gm7"
+        ]
+      },
+      {
+        title: "All The Things You Are",
+        measures: 36,
+        chords: [
+          "Fm7", "Bbm7", "Eb7", "Abmaj7", "Dbmaj7", "G7", "Cmaj7", "Cmaj7",
+          "Cm7", "Fm7", "Bb7", "Ebmaj7", "Abmaj7", "D7", "Gmaj7", "Gmaj7",
+          "Am7", "D7", "Gmaj7", "Gmaj7", "F#m7b5", "B7", "Emaj7", "C7#5",
+          "Fm7", "Bbm7", "Eb7", "Abmaj7", "Dbmaj7", "Dbm7", "Cm7", "Bdim7",
+          "Bbm7", "Eb7", "Abmaj7", "Abmaj7"
+        ]
+      },
+      {
+        title: "There Will Never Be Another You",
+        measures: 32,
+        chords: [
+          "Ebmaj7", "Ebmaj7", "Dm7b5", "G7", "Cm7", "Cm7", "Bbm7", "Eb7",
+          "Abmaj7", "Abmaj7", "Ebmaj7", "Ebmaj7", "Fm7", "Fm7", "Bb7", "Bb7",
+          "Ebmaj7", "Ebmaj7", "Dm7b5", "G7", "Cm7", "Cm7", "Bbm7", "Eb7",
+          "Abmaj7", "Db7", "Ebmaj7 C7", "Fm7 Bb7", "Ebmaj7", "Fm7", "Bb7", "Bb7"
+        ]
+      },
+      {
+        title: "Blue Bossa",
+        measures: 16,
+        chords: [
+          "Cm7", "Cm7", "Fm7", "Fm7", "Dm7b5", "G7", "Cm7", "Cm7",
+          "Ebm7", "Ab7", "Dbmaj7", "Dbmaj7", "Dm7b5", "G7", "Cm7", "Cm7"
+        ]
+      },
+      {
+        title: "I Got Rhythm",
+        measures: 32,
+        chords: [
+          "Bbmaj7 G7", "Cm7 F7", "Bbmaj7 G7", "Cm7 F7", "Bbmaj7 Bb7", "Ebmaj7 Edim7", "Bbmaj7 F7", "Bbmaj7",
+          "Bbmaj7 G7", "Cm7 F7", "Bbmaj7 G7", "Cm7 F7", "Bbmaj7 Bb7", "Ebmaj7 Edim7", "Bbmaj7 F7", "Bbmaj7",
+          "D7", "D7", "G7", "G7", "C7", "C7", "F7", "F7",
+          "Bbmaj7 G7", "Cm7 F7", "Bbmaj7 G7", "Cm7 F7", "Bbmaj7 Bb7", "Ebmaj7 Edim7", "Bbmaj7 F7", "Bbmaj7"
+        ]
+      },
+      {
+        title: "Impressions",
+        measures: 32,
+        chords: [
+          "Dm7", "Dm7", "Dm7", "Dm7", "Dm7", "Dm7", "Dm7", "Dm7",
+          "Ebm7", "Ebm7", "Ebm7", "Ebm7", "Ebm7", "Ebm7", "Ebm7", "Ebm7",
+          "Dm7", "Dm7", "Dm7", "Dm7", "Dm7", "Dm7", "Dm7", "Dm7",
+          "Dm7", "Dm7", "Dm7", "Dm7", "Dm7", "Dm7", "Dm7", "Dm7"
+        ]
+      },
+      {
+        title: "You'd Be So Nice To Come Home To",
+        measures: 32,
+        chords: [
+          "Am7", "Am7", "Bm7b5", "E7", "Am7", "Am7", "Bm7b5", "E7",
+          "Am7", "A7", "Dm7", "Dm7", "D7", "D7", "G7", "E7",
+          "Am7", "Am7", "Bm7b5", "E7", "Am7", "Am7", "Bm7b5", "E7",
+          "Fmaj7", "Fm7", "Am7", "D7", "Bm7b5", "E7", "Am7", "Am7"
+        ]
+      },
+      {
+        title: "Softly, as in a Morning Sunrise",
+        measures: 32,
+        chords: [
+          "Cm7", "Dm7b5 G7", "Cm7", "Dm7b5 G7", "Cm7", "Dm7b5 G7", "Cm7", "Dm7b5 G7",
+          "Cm7", "Dm7b5 G7", "Cm7", "Dm7b5 G7", "Cm7", "Dm7b5 G7", "Cm7", "Cm7",
+          "Fm7", "Fm7", "Cm7", "Cm7", "D7", "D7", "G7", "G7",
+          "Cm7", "Dm7b5 G7", "Cm7", "Dm7b5 G7", "Cm7", "Dm7b5 G7", "Cm7", "Dm7b5 G7"
+        ]
+      },
+      {
+        title: "Stablemates",
+        measures: 36,
+        chords: [
+          "Em7 A7", "Ebmaj7", "Cm7 F7", "Bbmaj7", "Fm7b5 Bb7", "Ebmaj7", "Ebm7 Ab7", "Dbmaj7", "C#m7 F#7", "Bmaj7", "Bm7 E7", "Amaj7", "Am7 D7", "Gmaj7",
+          "Gm7 C7", "Fmaj7", "Fm7 Bb7", "Ebmaj7", "Em7 A7", "Dmaj7", "Dm7 G7", "Cmaj7",
+          "Em7 A7", "Ebmaj7", "Cm7 F7", "Bbmaj7", "Fm7b5 Bb7", "Ebmaj7", "Ebm7 Ab7", "Dbmaj7", "C#m7 F#7", "Bmaj7", "Bm7 E7", "Amaj7", "Am7 D7", "Gmaj7"
+        ]
+      },
+      {
+        title: "I'll Remember April",
+        measures: 48,
+        chords: [
+          "Gmaj7", "Gmaj7", "Gm7", "Gm7", "Gmaj7", "Gmaj7", "Gm7", "Gm7",
+          "Am7", "D7", "Gmaj7", "Gmaj7", "Bm7b5", "E7", "Am7", "D7",
+          "Gmaj7", "Gmaj7", "Gm7", "Gm7", "Gmaj7", "Gmaj7", "Gm7", "Gm7",
+          "Am7", "D7", "Gmaj7", "Gmaj7", "Bm7b5", "E7", "Am7", "D7",
+          "Bm7", "Bm7", "Bbm7", "Eb7", "Am7", "D7", "Gmaj7", "Gmaj7",
+          "Bm7", "Bm7", "Bbm7", "Eb7", "Am7", "Am7", "D7", "D7"
+        ]
+      },
+      {
+        title: "Stella by Starlight",
+        measures: 32,
+        chords: [
+          "Em7b5", "A7", "Cm7", "F7", "Fm7", "Bb7", "Ebmaj7", "Ebmaj7",
+          "Ab7", "Ab7", "Bbmaj7", "Bbmaj7", "Em7b5", "A7", "Dm7", "Dm7",
+          "Bbm7", "Eb7", "Fmaj7", "Fmaj7", "Em7b5", "A7", "Am7b5", "D7",
+          "G7", "G7", "Cm7", "Cm7", "Ab7", "Ab7", "Bbmaj7", "Bbmaj7"
+        ]
+      },
+      {
+        title: "Donna Lee",
+        measures: 32,
+        chords: [
+          "Abmaj7", "Abmaj7", "F7", "F7", "Bbm7", "Bbm7", "Bb7", "Bb7",
+          "Bbm7", "Eb7", "Abmaj7", "F7", "Bbm7", "C7", "Fm7", "C7",
+          "Fm7", "Fm7", "C7", "C7", "Fm7", "Fm7", "Eb7", "Eb7",
+          "Abmaj7", "Abmaj7", "F7", "F7", "Bbm7", "Edim7", "Abmaj7 F7", "Bbm7 Eb7"
+        ]
+      },
+      {
+        title: "What Is This Thing Called Love?",
+        measures: 32,
+        chords: [
+          "Gm7b5", "C7", "Fm7", "Fm7", "Dm7b5", "G7", "Cmaj7", "Cmaj7",
+          "Gm7b5", "C7", "Fm7", "Fm7", "Dm7b5", "G7", "Cmaj7", "Cmaj7",
+          "C7", "C7", "Fmaj7", "Fmaj7", "D7", "D7", "G7", "G7",
+          "Gm7b5", "C7", "Fm7", "Fm7", "Dm7b5", "G7", "Cmaj7", "Cmaj7"
+        ]
+      },
+      {
+        title: "Inner urge",
+        measures: 24,
+        chords: [
+          "F#m7b5", "F#m7b5", "F#m7b5", "F#m7b5", "Fmaj7", "Fmaj7", "Fmaj7", "Fmaj7",
+          "Ebmaj7", "Ebmaj7", "Ebmaj7", "Ebmaj7", "Dbmaj7", "Dbmaj7", "Dbmaj7", "Dbmaj7",
+          "Gmaj7", "Gmaj7", "Gbmaj7", "Gbmaj7", "Fmaj7", "Fmaj7", "Emaj7", "Emaj7"
+        ]
+      },
+      {
+        title: "Giant Steps",
+        measures: 16,
+        chords: [
+          "Bmaj7 D7", "Gmaj7 Bb7", "Ebmaj7", "Am7 D7",
+          "Gmaj7 Bb7", "Ebmaj7 F#7", "Bmaj7", "Fm7 Bb7",
+          "Ebmaj7", "Am7 D7", "Gmaj7", "C#m7 F#7",
+          "Bmaj7", "Fm7 Bb7", "Ebmaj7", "C#m7 F#7"
+        ]
+      }
+    ];
+
     function App() {
       const [measureCount, setMeasureCount] = useState(8);
-      const [chords, setChords] = useState(Array(32).fill(""));
+      // 長い曲に対応するため配列の最大サイズを64に拡張
+      const [chords, setChords] = useState(Array(64).fill(""));
       const [abcString, setAbcString] = useState("");
       const [audioAbcString, setAudioAbcString] = useState("");
-      const [abcjsLoaded, setAbcjsLoaded] = useState(true);
+      const [abcjsLoaded, setAbcjsLoaded] = useState(false);
+      
+      // スタンダード曲選択モーダルの状態管理
+      const [isModalOpen, setIsModalOpen] = useState(false);
 
       const audioRef = useRef(null);
       const synthRef = useRef(null);
 
       useEffect(() => {
-        const initialChords = Array(32).fill("");
+        const initialChords = Array(64).fill("");
         const preset = ["Dm7", "G7", "Cmaj7", "Cmaj7", "Em7", "A7", "Dmaj7", "Dmaj7"];
         preset.forEach((c, i) => { initialChords[i] = c; });
         setChords(initialChords);
+      }, []);
+
+      useEffect(() => {
+        if (!document.getElementById('abcjs-audio-css')) {
+          const link = document.createElement("link");
+          link.id = "abcjs-audio-css";
+          link.rel = "stylesheet";
+          link.href = "https://cdnjs.cloudflare.com/ajax/libs/abcjs/6.2.2/abcjs-audio.min.css";
+          document.head.appendChild(link);
+        }
+
+        if (window.ABCJS) {
+          setAbcjsLoaded(true);
+          return;
+        }
+        const script = document.createElement("script");
+        script.src = "https://cdnjs.cloudflare.com/ajax/libs/abcjs/6.2.2/abcjs-basic-min.js";
+        script.async = true;
+        script.onload = () => setAbcjsLoaded(true);
+        document.body.appendChild(script);
       }, []);
 
       useEffect(() => {
@@ -104,8 +288,8 @@
             responsive: "resize",
             add_classes: true,
             staffwidth: 800,
-            paddingtop: 15,
-            paddingbottom: 80,
+            paddingtop: 10,
+            paddingbottom: 30,
             paddingleft: 20,
             paddingright: 20,
           });
@@ -113,26 +297,19 @@
           if (window.ABCJS.synth.supportsAudio() && audioRef.current && audioAbcString) {
             const visualObjForAudio = window.ABCJS.renderAbc("*", audioAbcString, {})[0];
 
-            if (synthRef.current) {
-              synthRef.current.pause();
-              synthRef.current.disable(true);
+            if (!synthRef.current) {
+              synthRef.current = new window.ABCJS.synth.SynthController();
+              synthRef.current.load(audioRef.current, null, {
+                displayLoop: true,
+                displayRestart: true,
+                displayPlay: true,
+                displayProgress: true,
+                displayWarp: true 
+              });
             }
-            audioRef.current.innerHTML = "";
-
-            const synthControl = new window.ABCJS.synth.SynthController();
-            synthControl.load(audioRef.current, null, {
-              displayLoop: true,
-              displayRestart: true,
-              displayPlay: true,
-              displayProgress: false,
-              displayWarp: true 
-            });
-            
-            synthControl.setTune(visualObjForAudio, false, {
+            synthRef.current.setTune(visualObjForAudio, false, {
               chordsOff: true 
             }).catch(console.error);
-
-            synthRef.current = synthControl;
           }
         }
       }, [abcString, audioAbcString, abcjsLoaded]);
@@ -154,7 +331,7 @@
       };
 
       const setPreset = (type) => {
-        const newChords = Array(32).fill("");
+        const newChords = Array(64).fill("");
         if (type === '251') {
           setMeasureCount(4);
           ["Dm7", "G7", "Cmaj7", "Cmaj7"].forEach((c, i) => newChords[i] = c);
@@ -168,6 +345,15 @@
           autumn.forEach((c, i) => newChords[i] = c);
         }
         setChords(newChords);
+      };
+
+      // スタンダード曲選択時の処理
+      const selectStandardSong = (song) => {
+        setMeasureCount(song.measures);
+        const newChords = Array(64).fill("");
+        song.chords.forEach((c, i) => { newChords[i] = c; });
+        setChords(newChords);
+        setIsModalOpen(false); // モーダルを閉じる
       };
 
       const getMidiOffset = (noteStr) => {
@@ -272,7 +458,7 @@
         headerDisplay += "T: Jazz Solo Etude\n";
         headerDisplay += "M: 4/4\n";
         headerDisplay += "L: 1/8\n";
-        headerDisplay += "Q: 1/4=140\n";
+        headerDisplay += "Q: 1/4=140\n"; 
         headerDisplay += "K: C\n"; 
 
         let headerAudio = headerDisplay;
@@ -375,13 +561,8 @@
                     let n = ct + (oct * 12);
                     if (n >= 55 && n <= 84) {
                         let dist = Math.abs(n - prevTarget);
-                        // 同音連打を完全に防ぐ強力なペナルティ
                         if (n === prevTarget) dist += 1000; 
-                        
-                        // ドレドレのような狭い往復（2つ前の音と同じ）を強力に防ぐ
                         if (n === prevPrevTarget) dist += 500;
-                        
-                        // 3つ前の音と同じになるのも防ぐ
                         if (n === prevPrevPrevTarget) dist += 50;
                         
                         if (preferJump) {
@@ -407,7 +588,6 @@
         for (let index = 0; index < totalSlots - 1; index++) {
             let isChordChange = flatChords[index].chord !== flatChords[index + 1].chord;
             
-            // コードが変わるタイミングでのみアプローチノートを発生させる
             if (isChordChange) {
                 let forceApproach = flatChords[index].isAltered;
 
@@ -424,7 +604,6 @@
                     if (approachNote < 55) approachNote += 12;
                     if (approachNote > 84) approachNote -= 12;
                     
-                    // アプローチノートが直前の音や2つ前の音と同音（往復）になるのを防ぐ
                     if (index > 0) {
                         while (approachNote === notes[index - 1] || (index > 1 && approachNote === notes[index - 2])) {
                             approachNote += (Math.random() < 0.5 ? 1 : -1);
@@ -455,7 +634,6 @@
                 ];
                 slots = patterns[Math.floor(Math.random() * patterns.length)];
 
-                // オルタード/コンディミの小節は次へ連結するため、末尾を休符にしない
                 if (flatChords[i * 8 + 7].isAltered) {
                     slots[7] = 1;
                 }
@@ -468,16 +646,12 @@
                 let prevWasAltered = flatChords[prevLastIndex].isAltered;
 
                 if (prevWasAltered || isApproach[prevLastIndex]) {
-                    // アプローチノートやテンション解決で小節を終える時は、次の小節の頭に休符を入れない
                     slots[0] = 1;
                 } else if (!isRest[prevLastIndex]) {
-                    // 前の小節がコードトーンで終わった場合
                     if (Math.random() < 0.05) {
-                        // 5%の確率で次の小節の頭を八分休符にする
                         slots[0] = 0;
-                        slots[1] = 1; // 四分休符にならないよう裏拍は鳴らす
+                        slots[1] = 1; 
                     } else {
-                        // 95%の確率で繋げる（休まない）
                         slots[0] = 1;
                     }
                 }
@@ -488,7 +662,6 @@
                 }
             }
 
-            // 小節内のコードチェンジでもオルタードなら連結させる
             for (let s = 0; s < 7; s++) {
                 let currentIdx = i * 8 + s;
                 let nextIdx = i * 8 + s + 1;
@@ -505,12 +678,10 @@
             }
         }
 
-        // 連続する休符が長くなりすぎないように調整（最大3スロット = 1.5拍まで）
         let consecutiveRests = 0;
         for (let i = 0; i < totalSlots; i++) {
             if (isRest[i]) {
                 consecutiveRests++;
-                // 4つ連続の休符になりそうなら音符に戻してフレーズを再開させる
                 if (consecutiveRests > 3) {
                     isRest[i] = false;
                     consecutiveRests = 0;
@@ -520,24 +691,20 @@
             }
         }
 
-        // 拍ごとの三連符・四分音符フラグ
         let isTriplet = new Array(measureCount * 4).fill(false);
         let isQuarter = new Array(measureCount * 4).fill(false);
         for (let i = 0; i < measureCount; i++) {
-            let maxBeat = (i === measureCount - 1) ? 2 : 4; // 最後の小節は最初の2拍だけ判定
+            let maxBeat = (i === measureCount - 1) ? 2 : 4; 
             for (let beat = 0; beat < maxBeat; beat++) {
                 let idx1 = i * 8 + beat * 2;
                 let idx2 = i * 8 + beat * 2 + 1;
                 
-                // 休符がない拍（8分音符が2つ連続する場所）に対して確率で三連符化
                 if (!isRest[idx1] && !isRest[idx2]) {
-                    // 確率を5%に下げ、かつ元の2音が同音ではない場合のみ三連符を生成
                     if (Math.random() < 0.05 && notes[idx1] !== notes[idx2]) { 
                         isTriplet[i * 4 + beat] = true;
                     }
                 }
                 
-                // 三連符にならない場合で、拍の頭が休符でないなら、0.5%の確率で四分音符化
                 if (!isTriplet[i * 4 + beat] && !isRest[idx1]) {
                     if (Math.random() < 0.005) { 
                         isQuarter[i * 4 + beat] = true;
@@ -564,7 +731,6 @@
 
           let dynamicsV2 = (i === 0) ? "!ppp! " : "";
 
-          // 伴奏生成
           if (i === measureCount - 1) {
               abcMeasureV2 += dynamicsV2 + getAbcChord(chordsInMeasure[0], measureAccidentalsV2) + "8 |]";
           } else {
@@ -578,11 +744,9 @@
               abcMeasureV2 += " | ";
           }
 
-          // メロディ生成
           if (i === measureCount - 1) {
              let lastChord = flatChords[i * 8].chord;
              
-             // 最後の小節: 最初の2拍をフレーズとして描画する
              for (let beat = 0; beat < 2; beat++) {
                 let index1 = i * 8 + beat * 2;
                 let index2 = i * 8 + beat * 2 + 1;
@@ -615,7 +779,6 @@
 
                     abcMeasureV1 += "(3" + getAbcNote(n1, measureAccidentalsV1) + getAbcNote(n2, measureAccidentalsV1) + getAbcNote(n3, measureAccidentalsV1);
                 } else if (isQuarter[i * 4 + beat]) {
-                    // 四分音符として描画（ABC記法で長さを2倍にする）
                     abcMeasureV1 += getAbcNote(notes[index1], measureAccidentalsV1) + "2";
                 } else {
                     let str1 = isRest[index1] ? "z" : getAbcNote(notes[index1], measureAccidentalsV1);
@@ -637,10 +800,8 @@
                 if (breakBeam) abcMeasureV1 += " ";
              }
              
-             // 3拍目の頭（解決・着地音）を計算して、2分音符として長めに伸ばして終わる
              let tones = getChordTones(lastChord);
              let availableTones = tones.length > 1 ? tones.slice(1) : tones;
-             // 着地直前の音（2拍目の裏）を取得
              let prevNote = 64;
              if (!isRest[i * 8 + 3]) prevNote = notes[i * 8 + 3];
              else if (!isRest[i * 8 + 2]) prevNote = notes[i * 8 + 2];
@@ -652,7 +813,6 @@
                     let n = t + (oct * 12) + 12; 
                     if (n >= 55 && n <= 84) { 
                         let dist = Math.abs(n - prevNote);
-                        // 着地音が直前の音と同音になるのを防ぐ
                         if (n === prevNote) dist += 1000;
                         if (dist < minDist) {
                            minDist = dist;
@@ -672,18 +832,15 @@
                 if (beat === 2 && chordsInMeasure.length >= 2) abcMeasureV1 += `"${chordsInMeasure[1]}"`;
 
                 if (isTriplet[i * 4 + beat]) {
-                    // 三連符の生成（同音連打を完全に排除したロジック）
                     let n1 = notes[index1];
-                    let n3 = notes[index2]; // 条件判定により n1 !== n3 が保証されている
+                    let n3 = notes[index2]; 
                     let n2;
                     let diff = n3 - n1;
                     
                     if (Math.abs(diff) <= 2) {
-                        // 音程が近い場合は外側を回る刺繍音（ターン）的アプローチ
                         n2 = n1 + (diff > 0 ? -1 : 1);
                         if (Math.random() < 0.5) n2 = n3 + (diff > 0 ? 1 : -1);
                     } else {
-                        // 音程が離れている場合は間を埋めるか、ターゲットへ半音アプローチ
                         if (Math.random() < 0.5) {
                             n2 = n3 + (diff > 0 ? -1 : 1);
                         } else {
@@ -694,20 +851,17 @@
                     if (n2 < 55) n2 += 12;
                     if (n2 > 84) n2 -= 12;
 
-                    // 万が一前後の音と被った場合は強制的にずらす
                     while (n2 === n1 || n2 === n3) {
                         n2 += 1;
                     }
 
                     abcMeasureV1 += "(3" + getAbcNote(n1, measureAccidentalsV1) + getAbcNote(n2, measureAccidentalsV1) + getAbcNote(n3, measureAccidentalsV1);
                 } else if (isQuarter[i * 4 + beat]) {
-                    // 四分音符として描画（ABC記法で長さを2倍にする）
                     abcMeasureV1 += getAbcNote(notes[index1], measureAccidentalsV1) + "2";
                 } else {
                     let str1 = isRest[index1] ? "z" : getAbcNote(notes[index1], measureAccidentalsV1);
                     let str2 = isRest[index2] ? "z" : getAbcNote(notes[index2], measureAccidentalsV1);
                     
-                    // 休符が絡む場合は連桁(ビーム)を切断するためにスペースを入れる
                     if (isRest[index1] || isRest[index2]) {
                         abcMeasureV1 += str1 + " " + str2;
                     } else {
@@ -719,7 +873,6 @@
                 if (beat === 1) breakBeam = true; 
                 if (isTriplet[i * 4 + beat] || isQuarter[i * 4 + beat]) breakBeam = true; 
                 if (beat < 3 && (isTriplet[i * 4 + beat + 1] || isQuarter[i * 4 + beat + 1])) breakBeam = true; 
-                // 次の拍との間も、休符が絡むなら連桁を切断
                 if (beat < 3 && !isQuarter[i * 4 + beat] && (isRest[index2] || isRest[i * 8 + (beat + 1) * 2])) breakBeam = true;
 
                 if (breakBeam) abcMeasureV1 += " ";
@@ -749,6 +902,7 @@
         <div className="min-h-screen bg-gray-50 text-gray-800 font-sans p-4 md:p-8">
           <div className="max-w-5xl mx-auto space-y-6">
             
+            {/* ヘッダー */}
             <header className="flex items-center gap-3 border-b pb-4">
               <div className="p-3 bg-blue-600 text-white rounded-xl shadow-sm">
                 <MusicIcon />
@@ -759,48 +913,61 @@
               </div>
             </header>
 
-            <div className="flex flex-col gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               
-              <div className="w-full space-y-6 bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+              {/* 左パネル: 設定と入力 */}
+              <div className="lg:col-span-1 space-y-6 bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      小節数: {measureCount} 小節
-                    </label>
-                    <input 
-                      type="range" 
-                      min="4" 
-                      max="32" 
-                      step="4" 
-                      value={measureCount}
-                      onChange={handleMeasureCountChange}
-                      className="w-full accent-blue-600"
-                    />
-                    <div className="flex justify-between text-xs text-gray-400 mt-1">
-                      <span>4</span>
-                      <span>16</span>
-                      <span>32</span>
-                    </div>
-                  </div>
-
-                  <div>
-                    <span className="block text-sm font-semibold text-gray-700 mb-2">プリセット進行</span>
-                    <div className="flex flex-wrap gap-2">
-                      <button onClick={() => setPreset('251')} className="px-3 py-1.5 text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition">2-5-1 (4小節)</button>
-                      <button onClick={() => setPreset('blues')} className="px-3 py-1.5 text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition">ブルース (12小節)</button>
-                      <button onClick={() => setPreset('autumn')} className="px-3 py-1.5 text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition">枯葉風 (8小節)</button>
-                    </div>
+                {/* 小節数設定 */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    小節数: {measureCount} 小節
+                  </label>
+                  <input 
+                    type="range" 
+                    min="4" 
+                    max="64" 
+                    step="4" 
+                    value={measureCount}
+                    onChange={handleMeasureCountChange}
+                    className="w-full accent-blue-600"
+                  />
+                  <div className="flex justify-between text-xs text-gray-400 mt-1">
+                    <span>4</span>
+                    <span>32</span>
+                    <span>64</span>
                   </div>
                 </div>
 
                 <hr className="border-gray-100" />
 
+                {/* プリセット */}
+                <div>
+                  <span className="block text-sm font-semibold text-gray-700 mb-2">プリセット進行</span>
+                  <div className="flex flex-wrap gap-2">
+                    <button onClick={() => setPreset('251')} className="px-3 py-1.5 text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition">2-5-1 (4小節)</button>
+                    <button onClick={() => setPreset('blues')} className="px-3 py-1.5 text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition">ブルース (12小節)</button>
+                    <button onClick={() => setPreset('autumn')} className="px-3 py-1.5 text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition">枯葉風 (8小節)</button>
+                  </div>
+                  
+                  {/* スタンダード曲選択ボタン */}
+                  <div className="mt-3">
+                    <button 
+                      onClick={() => setIsModalOpen(true)} 
+                      className="w-full px-3 py-2 text-sm bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold rounded-lg transition border border-blue-200 flex items-center justify-center gap-2"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
+                      スタンダード曲から選ぶ
+                    </button>
+                  </div>
+                </div>
+
+                {/* コード入力グリッド */}
                 <div>
                   <span className="block text-sm font-semibold text-gray-700 mb-2">コード進行</span>
                   <p className="text-xs text-gray-500 mb-3">※1小節に2つコードを入れる場合は「Dm7 G7」のようにスペースで区切ってください。</p>
                   
-                  <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-8 gap-2 max-h-64 overflow-y-auto pr-2 custom-scrollbar">
+                  <div className="grid grid-cols-2 gap-2 max-h-64 overflow-y-auto pr-2 custom-scrollbar">
                     {Array.from({ length: measureCount }).map((_, i) => (
                       <div key={i} className="flex flex-col">
                         <span className="text-[10px] text-gray-400 font-mono">{i + 1}</span>
@@ -816,6 +983,7 @@
                   </div>
                 </div>
 
+                {/* 生成ボタン */}
                 <button 
                   onClick={generateEtude}
                   className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 rounded-xl shadow-sm transition active:scale-[0.98]"
@@ -825,19 +993,21 @@
                 </button>
               </div>
 
-              <div className="w-full bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
+              {/* 右パネル: 楽譜表示 */}
+              <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
                 <div className="bg-gray-50 border-b border-gray-100 px-4 py-3 flex justify-between items-center">
                   <span className="text-sm font-semibold text-gray-700">生成された五線譜</span>
                   <span className="text-xs text-gray-500 px-2 py-1 bg-gray-200 rounded-md">Bebop Style</span>
                 </div>
                 
+                {/* オーディオプレイヤーUI */}
                 <div className={abcString ? "bg-white border-b border-gray-100 px-4 py-3 flex justify-center w-full" : "hidden"}>
                   <div ref={audioRef} className="w-full max-w-3xl"></div>
                 </div>
                 
-                <div className="p-4 pb-12 overflow-x-auto flex-1 flex justify-center">
+                <div className="p-4 overflow-x-auto flex-1">
                   {abcString ? (
-                    <div id="paper" className="min-w-full lg:min-w-[800px] flex justify-center"></div>
+                    <div id="paper" className="min-w-[800px]"></div>
                   ) : (
                     <div className="h-full flex items-center justify-center text-gray-400 flex-col gap-3 min-h-[300px]">
                       <MusicIcon />
@@ -849,6 +1019,44 @@
 
             </div>
           </div>
+
+          {/* スタンダード曲選択モーダル */}
+          {isModalOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 backdrop-blur-sm p-4">
+              <div className="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[85vh] overflow-hidden flex flex-col animate-[fadeIn_0.2s_ease-out]">
+                <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                  <h2 className="font-bold text-gray-800 flex items-center gap-2">
+                    <MusicIcon />
+                    スタンダード曲を選択
+                  </h2>
+                  <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-600 transition bg-white p-1 rounded-full border border-gray-200">
+                    <CloseIcon />
+                  </button>
+                </div>
+                <div className="p-4 overflow-y-auto custom-scrollbar flex-1 space-y-2">
+                  {standardSongs.map((song, idx) => (
+                    <button 
+                      key={idx}
+                      onClick={() => selectStandardSong(song)}
+                      className="w-full text-left px-4 py-3 rounded-xl hover:bg-blue-50 border border-transparent hover:border-blue-100 transition flex justify-between items-center group bg-white shadow-sm"
+                    >
+                      <span className="font-medium text-gray-700 group-hover:text-blue-700 transition">{song.title}</span>
+                      <span className="text-xs text-gray-500 bg-gray-100 group-hover:bg-white group-hover:text-blue-500 px-2 py-1 rounded-md transition border border-gray-200 group-hover:border-blue-200">
+                        {song.measures} 小節
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          <style dangerouslySetInnerHTML={{__html: `
+            @keyframes fadeIn {
+              from { opacity: 0; transform: scale(0.95); }
+              to { opacity: 1; transform: scale(1); }
+            }
+          `}} />
         </div>
       );
     }
