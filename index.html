@@ -1,1340 +1,545 @@
-import React, { useState, useEffect, useRef } from 'react';
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rudiments Drum Solo Etude - Elvin Advanced refined</title>
 
-// --- インラインSVGアイコン ---
-const MusicIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M9 18V5l12-2v13"></path>
-    <circle cx="6" cy="18" r="3"></circle>
-    <circle cx="18" cy="16" r="3"></circle>
-  </svg>
-);
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
 
-const RefreshIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
-    <path d="M3 3v5h5"></path>
-    <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"></path>
-    <path d="M16 21v-5h5"></path>
-  </svg>
-);
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    
+    <!-- Babel for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-const CloseIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <line x1="18" y1="6" x2="6" y2="18"></line>
-    <line x1="6" y1="6" x2="18" y2="18"></line>
-  </svg>
-);
+    <!-- ABCJS for Music Notation & Audio -->
+    <script src="https://cdn.jsdelivr.net/npm/abcjs@6.3.0/dist/abcjs-basic-min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/abcjs@6.3.0/abcjs-audio.min.css">
 
-const PrintIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="6 9 6 2 18 2 18 9"></polyline>
-    <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
-    <rect x="6" y="14" width="12" height="8"></rect>
-  </svg>
-);
-
-const standardSongs = [
-  {
-    title: "All The Things You Are",
-    measures: 36,
-    chords: [
-      "Fm7", "Bbm7", "Eb7", "Abmaj7", "Dbmaj7", "G7", "Cmaj7", "Cmaj7",
-      "Cm7", "Fm7", "Bb7", "Ebmaj7", "Abmaj7", "D7", "Gmaj7", "Gmaj7",
-      "Am7", "D7", "Gmaj7", "Gmaj7", "F#m7b5", "B7", "Emaj7", "C7#5",
-      "Fm7", "Bbm7", "Eb7", "Abmaj7", "Dbmaj7", "Dbm7", "Cm7", "Bdim7",
-      "Bbm7", "Eb7", "Abmaj7", "Abmaj7"
-    ]
-  },
-  {
-    title: "Autumn Leaves",
-    measures: 32,
-    chords: [
-      "Cm7", "F7", "Bbmaj7", "Ebmaj7", "Am7b5", "D7", "Gm7", "Gm7",
-      "Cm7", "F7", "Bbmaj7", "Ebmaj7", "Am7b5", "D7", "Gm7", "Gm7",
-      "Am7b5", "D7", "Gm7", "Gm7", "Cm7", "F7", "Bbmaj7", "Ebmaj7",
-      "Am7b5", "D7", "Gm7 C7", "Fm7 Bb7", "Ebmaj7", "Am7b5 D7", "Gm7", "Gm7"
-    ]
-  },
-  {
-    title: "Blue Bossa",
-    measures: 16,
-    chords: [
-      "Cm7", "Cm7", "Fm7", "Fm7", "Dm7b5", "G7", "Cm7", "Cm7",
-      "Ebm7", "Ab7", "Dbmaj7", "Dbmaj7", "Dm7b5", "G7", "Cm7", "Cm7"
-    ]
-  },
-  {
-    title: "Donna Lee",
-    measures: 32,
-    chords: [
-      "Abmaj7", "Abmaj7", "F7", "F7", "Bbm7", "Bbm7", "Bb7", "Bb7",
-      "Bbm7", "Eb7", "Abmaj7", "F7", "Bbm7", "C7", "Fm7", "C7",
-      "Fm7", "Fm7", "C7", "C7", "Fm7", "Fm7", "Eb7", "Eb7",
-      "Abmaj7", "Abmaj7", "F7", "F7", "Bbm7", "Edim7", "Abmaj7 F7", "Bbm7 Eb7"
-    ]
-  },
-  {
-    title: "Giant Steps",
-    measures: 16,
-    chords: [
-      "Bmaj7 D7", "Gmaj7 Bb7", "Ebmaj7", "Am7 D7",
-      "Gmaj7 Bb7", "Ebmaj7 F#7", "Bmaj7", "Fm7 Bb7",
-      "Ebmaj7", "Am7 D7", "Gmaj7", "C#m7 F#7",
-      "Bmaj7", "Fm7 Bb7", "Ebmaj7", "C#m7 F#7"
-    ]
-  },
-  {
-    title: "I Got Rhythm",
-    measures: 32,
-    chords: [
-      "Bbmaj7 G7", "Cm7 F7", "Bbmaj7 G7", "Cm7 F7", "Bbmaj7 Bb7", "Ebmaj7 Edim7", "Bbmaj7 F7", "Bbmaj7",
-      "Bbmaj7 G7", "Cm7 F7", "Bbmaj7 G7", "Cm7 F7", "Bbmaj7 Bb7", "Ebmaj7 Edim7", "Bbmaj7 F7", "Bbmaj7",
-      "D7", "D7", "G7", "G7", "C7", "C7", "F7", "F7",
-      "Bbmaj7 G7", "Cm7 F7", "Bbmaj7 G7", "Cm7 F7", "Bbmaj7 Bb7", "Ebmaj7 Edim7", "Bbmaj7 F7", "Bbmaj7"
-    ]
-  },
-  {
-    title: "I'll Remember April",
-    measures: 48,
-    chords: [
-      "Gmaj7", "Gmaj7", "Gm7", "Gm7", "Gmaj7", "Gmaj7", "Gm7", "Gm7",
-      "Am7", "D7", "Gmaj7", "Gmaj7", "Bm7b5", "E7", "Am7", "D7",
-      "Gmaj7", "Gmaj7", "Gm7", "Gm7", "Gmaj7", "Gmaj7", "Gm7", "Gm7",
-      "Am7", "D7", "Gmaj7", "Gmaj7", "Bm7b5", "E7", "Am7", "D7",
-      "Bm7", "Bm7", "Bbm7", "Eb7", "Am7", "D7", "Gmaj7", "Gmaj7",
-      "Bm7", "Bm7", "Bbm7", "Eb7", "Am7", "Am7", "D7", "D7"
-    ]
-  },
-  {
-    title: "Impressions",
-    measures: 32,
-    chords: [
-      "Dm7", "Dm7", "Dm7", "Dm7", "Dm7", "Dm7", "Dm7", "Dm7",
-      "Ebm7", "Ebm7", "Ebm7", "Ebm7", "Ebm7", "Ebm7", "Ebm7", "Ebm7",
-      "Dm7", "Dm7", "Dm7", "Dm7", "Dm7", "Dm7", "Dm7", "Dm7",
-      "Dm7", "Dm7", "Dm7", "Dm7", "Dm7", "Dm7", "Dm7", "Dm7"
-    ]
-  },
-  {
-    title: "Inner Urge",
-    measures: 24,
-    chords: [
-      "F#m7b5", "F#m7b5", "F#m7b5", "F#m7b5", "Fmaj7", "Fmaj7", "Fmaj7", "Fmaj7",
-      "Ebmaj7", "Ebmaj7", "Ebmaj7", "Ebmaj7", "Dbmaj7", "Dbmaj7", "Dbmaj7", "Dbmaj7",
-      "Gmaj7", "Gmaj7", "Gbmaj7", "Gbmaj7", "Fmaj7", "Fmaj7", "Emaj7", "Emaj7"
-    ]
-  },
-  {
-    title: "Moment's Notice",
-    measures: 38,
-    chords: [
-      "Em7 A7", "Fm7 Bb7", "Ebmaj7", "Abm7 Db7", 
-      "Dm7 G7", "Ebm7 Ab7", "Dbmaj7", "Dm7 G7",
-      "Cm7", "Bbm7 Eb7", "Abmaj7", "Abm7 Db7", 
-      "Gm7", "Abm7 Db7", "Gbmaj7", "Fm7 Bb7",
-      "Em7 A7", "Fm7 Bb7", "Ebmaj7", "Abm7 Db7", 
-      "Dm7 G7", "Ebm7 Ab7", "Dbmaj7", "Dm7 G7",
-      "Cm7", "Bbm7 Eb7", "Abmaj7", "Abm7 Db7", 
-      "Gm7 C7", "Fm7 Bb7", "Ebmaj7", "Fm7 Bb7",
-      "Ebmaj7", "Fm7 Bb7", "Gm7 Fm7", "Ebmaj7 Fm7", "Gm7 Fm7", "Ebmaj7"
-    ]
-  },
-  {
-    title: "So What",
-    measures: 32,
-    chords: [
-      "Dm7", "Dm7", "Dm7", "Dm7", "Dm7", "Dm7", "Dm7", "Dm7",
-      "Dm7", "Dm7", "Dm7", "Dm7", "Dm7", "Dm7", "Dm7", "Dm7",
-      "Ebm7", "Ebm7", "Ebm7", "Ebm7", "Ebm7", "Ebm7", "Ebm7", "Ebm7",
-      "Dm7", "Dm7", "Dm7", "Dm7", "Dm7", "Dm7", "Dm7", "Dm7"
-    ]
-  },
-  {
-    title: "Softly, as in a Morning Sunrise",
-    measures: 32,
-    chords: [
-      "Cm7", "Dm7b5 G7", "Cm7", "Dm7b5 G7", "Cm7", "Dm7b5 G7", "Cm7", "Dm7b5 G7",
-      "Cm7", "Dm7b5 G7", "Cm7", "Dm7b5 G7", "Cm7", "Dm7b5 G7", "Cm7", "Cm7",
-      "Fm7", "Fm7", "Cm7", "Cm7", "D7", "D7", "G7", "G7",
-      "Cm7", "Dm7b5 G7", "Cm7", "Dm7b5 G7", "Cm7", "Dm7b5 G7", "Cm7", "Dm7b5 G7"
-    ]
-  },
-  {
-    title: "Stablemates",
-    measures: 36,
-    chords: [
-      "Em7 A7", "Ebmaj7", "Cm7 F7", "Bbmaj7", "Fm7b5 Bb7", "Ebmaj7", "Ebm7 Ab7", "Dbmaj7", "C#m7 F#7", "Bmaj7", "Bm7 E7", "Amaj7", "Am7 D7", "Gmaj7",
-      "Gm7 C7", "Fmaj7", "Fm7 Bb7", "Ebmaj7", "Em7 A7", "Dmaj7", "Dm7 G7", "Cmaj7",
-      "Em7 A7", "Ebmaj7", "Cm7 F7", "Bbmaj7", "Fm7b5 Bb7", "Ebmaj7", "Ebm7 Ab7", "Dbmaj7", "C#m7 F#7", "Bmaj7", "Bm7 E7", "Amaj7", "Am7 D7", "Gmaj7"
-    ]
-  },
-  {
-    title: "Stella by Starlight",
-    measures: 32,
-    chords: [
-      "Em7b5", "A7", "Cm7", "F7", "Fm7", "Bb7", "Ebmaj7", "Ebmaj7",
-      "Ab7", "Ab7", "Bbmaj7", "Bbmaj7", "Em7b5", "A7", "Dm7", "Dm7",
-      "Bbm7", "Eb7", "Fmaj7", "Fmaj7", "Em7b5", "A7", "Am7b5", "D7",
-      "G7", "G7", "Cm7", "Cm7", "Ab7", "Ab7", "Bbmaj7", "Bbmaj7"
-    ]
-  },
-  {
-    title: "There Will Never Be Another You",
-    measures: 32,
-    chords: [
-      "Ebmaj7", "Ebmaj7", "Dm7b5", "G7", "Cm7", "Cm7", "Bbm7", "Eb7",
-      "Abmaj7", "Abmaj7", "Ebmaj7", "Ebmaj7", "Fm7", "Fm7", "Bb7", "Bb7",
-      "Ebmaj7", "Ebmaj7", "Dm7b5", "G7", "Cm7", "Cm7", "Bbm7", "Eb7",
-      "Abmaj7", "Db7", "Ebmaj7 C7", "Fm7 Bb7", "Ebmaj7", "Fm7", "Bb7", "Bb7"
-    ]
-  },
-  {
-    title: "What Is This Thing Called Love?",
-    measures: 32,
-    chords: [
-      "Gm7b5", "C7", "Fm7", "Fm7", "Dm7b5", "G7", "Cmaj7", "Cmaj7",
-      "Gm7b5", "C7", "Fm7", "Fm7", "Dm7b5", "G7", "Cmaj7", "Cmaj7",
-      "C7", "C7", "Fmaj7", "Fmaj7", "D7", "D7", "G7", "G7",
-      "Gm7b5", "C7", "Fm7", "Fm7", "Dm7b5", "G7", "Cmaj7", "Cmaj7"
-    ]
-  },
-  {
-    title: "You'd Be So Nice To Come Home To",
-    measures: 32,
-    chords: [
-      "Am7", "Am7", "Bm7b5", "E7", "Am7", "Am7", "Bm7b5", "E7",
-      "Am7", "A7", "Dm7", "Dm7", "D7", "D7", "G7", "E7",
-      "Am7", "Am7", "Bm7b5", "E7", "Am7", "Am7", "Bm7b5", "E7",
-      "Fmaj7", "Fm7", "Am7", "D7", "Bm7b5", "E7", "Am7", "Am7"
-    ]
-  }
-];
-
-export default function App() {
-  const [measureCount, setMeasureCount] = useState(8);
-  const [chords, setChords] = useState(Array(64).fill(""));
-  const [currentSongTitle, setCurrentSongTitle] = useState("");
-  
-  const [abcString, setAbcString] = useState("");
-  const [audioAbcString, setAudioAbcString] = useState("");
-  const [backingAbcString, setBackingAbcString] = useState("");
-  const [isBackingOnly, setIsBackingOnly] = useState(false);
-  
-  const [abcjsLoaded, setAbcjsLoaded] = useState(false);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-
-  const audioRef = useRef(null);
-  const synthRef = useRef(null);
-
-  useEffect(() => {
-    const initialChords = Array(64).fill("");
-    const preset = ["Dm7", "G7", "Cmaj7", "Cmaj7", "Em7", "A7", "Dmaj7", "Dmaj7"];
-    preset.forEach((c, i) => { initialChords[i] = c; });
-    setChords(initialChords);
-  }, []);
-
-  useEffect(() => {
-    if (!document.getElementById('abcjs-audio-css')) {
-      const link = document.createElement("link");
-      link.id = "abcjs-audio-css";
-      link.rel = "stylesheet";
-      link.href = "https://cdnjs.cloudflare.com/ajax/libs/abcjs/6.2.2/abcjs-audio.min.css";
-      document.head.appendChild(link);
-    }
-
-    // プレイヤーのUIやインジケーターの色を整える必須スタイルを注入
-    if (!document.getElementById('jazz-etude-styles')) {
-      const style = document.createElement("style");
-      style.id = "jazz-etude-styles";
-      style.innerHTML = `
+    <style>
         .abcjs-css-warning { display: none !important; }
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-        .abcjs-note { fill: #1f2937; }
-        .abcjs-staff { fill: #1f2937; }
-        .abcjs-highlight { fill: #2563eb !important; } 
-        #paper { padding-bottom: 20px; }
-        #paper svg { overflow: visible !important; margin-bottom: 40px !important; width: 100% !important; height: auto !important; }
-        .abcjs-inline-audio { margin: 0; padding: 10px; display: flex; align-items: center; gap: 8px; justify-content: center; }
-        .abcjs-inline-audio .abcjs-btn { background-color: #e2e8f0 !important; border: 1px solid #cbd5e1 !important; border-radius: 8px !important; color: #334155 !important; width: 36px !important; height: 36px !important; cursor: pointer; display: inline-flex !important; align-items: center; justify-content: center; margin: 0 4px; padding: 0 !important; }
-        .abcjs-inline-audio .abcjs-btn:hover { background-color: #cbd5e1 !important; }
-        .abcjs-inline-audio .abcjs-btn svg { width: 20px !important; height: 20px !important; fill: #334155 !important; }
-      `;
-      document.head.appendChild(style);
-    }
+        body { font-family: 'Inter', sans-serif; background-color: #f4f4f5; touch-action: manipulation; }
+        #score-container svg { width: 100%; height: auto; display: block; }
+        .abcjs-inline-audio { max-width: 100%; padding: 10px; border-radius: 8px; }
 
-    if (window.ABCJS) {
-      setAbcjsLoaded(true);
-      return;
-    }
-    const script = document.createElement("script");
-    script.src = "https://cdnjs.cloudflare.com/ajax/libs/abcjs/6.2.2/abcjs-basic-min.js";
-    script.async = true;
-    script.onload = () => setAbcjsLoaded(true);
-    document.body.appendChild(script);
-  }, []);
-
-  // 楽譜とプレイヤーの描画・初期化
-  useEffect(() => {
-    if (abcjsLoaded && abcString && window.ABCJS) {
-      
-      // どんな画面幅でも基準幅(800px)で描画し、それを枠に合わせて自動縮小させる
-      window.ABCJS.renderAbc("paper", abcString, {
-        responsive: "resize",
-        add_classes: true,
-        paddingtop: 10,
-        paddingbottom: 30,
-        paddingleft: 10,
-        paddingright: 10,
-        staffwidth: 800,
-      });
-
-      const currentAudioString = isBackingOnly ? backingAbcString : audioAbcString;
-      const visualObjForAudio = window.ABCJS.renderAbc("audio-paper", currentAudioString, {
-        add_classes: true
-      })[0];
-
-      if (window.ABCJS.synth.supportsAudio() && audioRef.current) {
-        if (synthRef.current) {
-          synthRef.current.pause();
-          synthRef.current.disable(true);
+        /* 不要なテキスト装飾や強弱記号の文字を非表示にする */
+        #score-container svg .abcjs-decoration, 
+        #score-container svg .abcjs-dynamics, 
+        #score-container svg .abcjs-annotation {
+            display: none !important;
         }
-        audioRef.current.innerHTML = "";
+        
+        /* アクセント記号のみを表示し、赤くする */
+        .abcjs-articulation {
+            fill: #ef4444 !important;
+            stroke: #ef4444 !important;
+        }
 
-        const cursorControl = {
-          onStart: function() {
-            const svg = document.querySelector("#paper svg");
-            if (svg) {
-              const notes = svg.querySelectorAll(".abcjs-highlight");
-              notes.forEach(note => note.classList.remove("abcjs-highlight"));
+        .abcjs-inline-audio .abcjs-tempo-wrapper,
+        .abcjs-inline-audio .abcjs-midi-tempo,
+        .abcjs-inline-audio .abcjs-label {
+            color: #18181b !important;
+            font-weight: 600 !important;
+            display: inline-block !important;
+        }
+        
+        button { user-select: none; -webkit-tap-highlight-color: transparent; }
+
+        /* 印刷/PDF用設定 */
+        @media print {
+            body { background-color: white; padding: 0; margin: 0; }
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+            .printable-area { 
+                box-shadow: none !important; border: none !important; 
+                width: 100% !important; max-width: none !important;
+                margin: 0 !important; padding: 0 !important;
             }
-          },
-          onEvent: function(ev) {
-            if (!ev || (ev.measureStart && ev.left === null)) return; 
+            #score-container svg { width: 100% !important; }
+            .page-break { page-break-before: always; }
+        }
+    </style>
+</head>
+<body class="p-2 md:p-8 text-zinc-800">
+    <div id="root"></div>
 
-            const displaySvg = document.querySelector("#paper svg");
-            const audioSvg = document.querySelector("#audio-paper svg");
-            if (!displaySvg || !audioSvg) return;
-            
-            const oldNotes = displaySvg.querySelectorAll(".abcjs-highlight");
-            oldNotes.forEach(note => note.classList.remove("abcjs-highlight"));
-            
-            if (ev.elements && Array.isArray(ev.elements)) {
-              const audioNotes = Array.from(audioSvg.querySelectorAll(".abcjs-v0 .abcjs-note, .abcjs-v0 .abcjs-rest"));
-              const displayNotes = Array.from(displaySvg.querySelectorAll(".abcjs-note, .abcjs-rest"));
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
 
-              ev.elements.forEach(element => {
-                if (!element) return;
-                let index = audioNotes.indexOf(element);
-                
-                if (index === -1 && element.closest) {
-                    const parentGroup = element.closest('.abcjs-note, .abcjs-rest');
-                    if (parentGroup) {
-                        index = audioNotes.indexOf(parentGroup);
-                    }
+        // --- MOTIF LIBRARY ---
+        // A (Floor Tom) は常にゴースト属性 'G' で使用
+        const MOTIF_LIBRARY = {
+            straight: {
+                rest: {
+                    basic: [[["z2", "", ""]]],
+                    advanced: [
+                        [["[!style=x!fF]", "R+K", "A"], ["c", "r", "G", "/"], ["c", "l", "G", "/"]], 
+                        [["[!style=x!fF]", "R+K", "A"], ["e", "r", "G", "/"], ["e", "l", "G", "/"]], 
+                        [["[!style=x!fF]", "R+K", "A"], ["A", "r", "G", "/"], ["A", "l", "G", "/"]], 
+                        [["[!style=x!fF]", "R+K", "A"], ["c", "r", "G", "/"], ["e", "l", "G", "/"]], 
+                        [["[!style=x!fF]", "R+K", "A"], ["e", "r", "G", "/"], ["A", "l", "G", "/"]]  
+                    ],
+                    extreme: [[["z2", "", ""]]]
+                },
+                glitch_fill: {
+                    extreme: [
+                        [["c", "r", "G"], ["F", "K", "K"], ["F", "K", "K"], ["c", "l", "G"]], 
+                        [["F", "K", "K"], ["c", "r", "G"], ["c", "l", "G"], ["F", "K", "K"]], 
+                        [["c", "r", "G", "//"], ["c", "r", "G", "//"], ["c", "l", "G", "//"], ["c", "l", "G", "//"], ["F", "K", "K", "/"], ["F", "K", "K", "/"]],
+                        [["c", "r", "G"], ["c", "l", "G"], ["c", "r", "G"]] 
+                    ]
+                },
+                glitch_triplet: {
+                    extreme: [
+                        [["c", "r", "G"], ["c", "l", "G"], ["F", "K", "K"]], 
+                        [["F", "K", "K"], ["c", "r", "G"], ["c", "l", "G"]], 
+                        [["c", "r", "G"], ["F", "K", "K"], ["c", "l", "G"]]  
+                    ]
+                },
+                acc_1: {
+                    basic: [[["c", "R", "A"], ["c", "L", "G"], ["c", "R", "G"], ["c", "L", "G"]]],
+                    advanced: [
+                        [["c", "R", "A"], ["c", "L", "G"], ["c", "R", "G"], ["c", "L", "G"]],
+                        [["e", "R", "A"], ["c", "L", "G"], ["c", "R", "G"], ["c", "L", "G"]],
+                        [["c", "R", "A"], ["A", "l", "G"], ["A", "r", "G"], ["c", "L", "G"]],
+                        [["e", "R", "A"], ["c", "L", "G"], ["A", "r", "G"], ["A", "l", "G"]]
+                    ],
+                    extreme: [
+                        [["c", "R", "A"], ["c", "L", "G"], ["F", "K", "K"], ["F", "K", "K"]], 
+                        [["c", "R", "A"], ["c", "r", "G", "//"], ["c", "r", "G", "//"], ["c", "l", "G", "//"], ["c", "l", "G", "//"], ["F", "K", "K", "/"]],
+                        [["c", "R", "A"], ["c", "r", "G"], ["c", "l", "G"]] 
+                    ]
+                },
+                acc_2: {
+                    basic: [[["c", "R", "G"], ["c", "L", "A"], ["c", "R", "G"], ["c", "L", "G"]]],
+                    advanced: [
+                        [["c", "R", "G"], ["c", "L", "A"], ["c", "R", "G"], ["c", "L", "G"]],
+                        [["A", "r", "G"], ["c", "L", "A"], ["c", "R", "G"], ["A", "l", "G"]],
+                        [["e", "R", "G"], ["c", "L", "A"], ["A", "r", "G"], ["c", "L", "G"]],
+                        [["A", "r", "G"], ["e", "L", "A"], ["c", "R", "G"], ["c", "L", "G"]]
+                    ],
+                    extreme: [
+                        [["F", "K", "K"], ["c", "L", "A"], ["c", "R", "G"], ["c", "R", "G"]], 
+                        [["F", "K", "K"], ["c", "L", "A"], ["c", "r", "G", "//"], ["c", "r", "G", "//"], ["c", "l", "G", "//"], ["c", "l", "G", "//"]],
+                        [["c", "r", "G"], ["c", "L", "A"], ["c", "r", "G"]] 
+                    ]
+                },
+                acc_3: {
+                    basic: [[["c", "R", "G"], ["c", "L", "G"], ["c", "R", "A"], ["c", "L", "G"]]],
+                    advanced: [
+                        [["c", "R", "G"], ["c", "L", "G"], ["c", "R", "A"], ["c", "L", "G"]],
+                        [["A", "r", "G"], ["A", "l", "G"], ["e", "R", "A"], ["c", "L", "G"]],
+                        [["c", "R", "G"], ["A", "l", "G"], ["c", "R", "A"], ["A", "l", "G"]],
+                        [["e", "R", "G"], ["c", "L", "G"], ["c", "R", "A"], ["A", "l", "G"]]
+                    ],
+                    extreme: [
+                        [["c", "r", "G", "//"], ["c", "r", "G", "//"], ["c", "l", "G", "//"], ["c", "l", "G", "//"], ["c", "R", "A"], ["c", "L", "G"]],
+                        [["F", "K", "K"], ["c", "R", "A"], ["c", "l", "G", "//"], ["c", "l", "G", "//"], ["c", "r", "G", "//"], ["c", "r", "G", "//"]],
+                        [["F", "K", "K"], ["c", "l", "G"], ["c", "R", "A"]] 
+                    ]
+                },
+                acc_4: {
+                    basic: [[["c", "R", "G"], ["c", "L", "G"], ["c", "R", "G"], ["c", "L", "A"]]],
+                    advanced: [
+                        [["c", "R", "G"], ["c", "L", "G"], ["c", "R", "G"], ["c", "L", "A"]],
+                        [["A", "r", "G"], ["c", "L", "G"], ["A", "r", "G"], ["e", "L", "A"]],
+                        [["c", "R", "G"], ["A", "l", "G"], ["c", "R", "G"], ["c", "L", "A"]],
+                        [["e", "R", "G"], ["A", "l", "G"], ["A", "r", "G"], ["c", "L", "A"]]
+                    ],
+                    extreme: [
+                        [["c", "r", "G", "//"], ["c", "r", "G", "//"], ["c", "l", "G", "//"], ["c", "l", "G", "//"], ["F", "K", "K"], ["c", "L", "A"]], 
+                        [["c", "r", "G"], ["F", "K", "K"], ["c", "L", "A"]] 
+                    ]
                 }
-
-                if (index !== -1 && displayNotes[index]) {
-                  displayNotes[index].classList.add("abcjs-highlight");
+            },
+            swing: {
+                rest: { 
+                    basic: [[["z2", "", ""]]], 
+                    // Orchestration: 1拍目クラッシュ + 3拍目フィラー
+                    advanced: [
+                        [["[!style=x!fF]", "R+K", "A"], ["z", "", ""], ["c", "l", "G"]],
+                        [["[!style=x!fF]", "R+K", "A"], ["z", "", ""], ["e", "l", "G"]]
+                    ],
+                    advanced_elvin: [
+                        [["[!style=x!fF]", "R+K", "A"], ["c", "l", "G"], ["A", "r", "G"]],
+                        [["e", "R", "A"], ["c", "l", "G"], ["F", "K", "G"]],
+                        [["c", "R", "A", "/"], ["e", "l", "G", "/"], ["A", "r", "G", "/"], ["F", "K", "G", "/"]]
+                    ]
+                },
+                acc_1: {
+                    basic: [[["c", "R", "A"], ["c", "L", "G"], ["c", "R", "G"]]],
+                    advanced: [
+                        [["c", "R", "A"], ["A", "l", "G"], ["c", "R", "G"]],
+                        [["e", "R", "A"], ["c", "L", "G"], ["A", "r", "G"]]
+                    ],
+                    advanced_elvin: [
+                        [["c", "R", "A"], ["e", "l", "G"], ["A", "r", "G"]],
+                        [["c", "R", "A", "/"], ["c", "l", "G", "/"], ["c", "r", "G", "/"], ["c", "l", "G", "/"]]
+                    ]
+                },
+                acc_2: {
+                    basic: [[["c", "L", "G"], ["c", "R", "A"], ["c", "L", "G"]]],
+                    advanced: [
+                        [["A", "l", "G"], ["c", "R", "A"], ["c", "L", "G"]],
+                        [["c", "L", "G"], ["e", "R", "A"], ["A", "l", "G"]]
+                    ],
+                    advanced_elvin: [
+                        [["e", "r", "G"], ["c", "L", "A"], ["F", "K", "G"]],
+                        [["e", "r", "G", "/"], ["A", "l", "G", "/"], ["c", "L", "A", "/"], ["F", "K", "G", "/"]]
+                    ]
+                },
+                acc_3: {
+                    basic: [[["c", "R", "G"], ["c", "L", "G"], ["c", "R", "A"]]],
+                    advanced: [
+                        [["c", "R", "G"], ["A", "l", "G"], ["c", "R", "A"]],
+                        [["A", "r", "G"], ["c", "L", "G"], ["e", "R", "A"]]
+                    ],
+                    advanced_elvin: [
+                        [["A", "r", "G"], ["F", "K", "G"], ["e", "R", "A"]],
+                        [["A", "r", "G", "/"], ["A", "l", "G", "/"], ["e", "R", "A", "/"], ["e", "l", "G", "/"]]
+                    ]
+                },
+                acc_4: {
+                    basic: [[["c", "L", "G"], ["c", "R", "G"], ["c", "L", "A"]]],
+                    advanced: [
+                        [["c", "L", "G"], ["A", "R", "G"], ["c", "L", "A"]],
+                        [["A", "l", "G"], ["c", "R", "G"], ["e", "L", "A"]]
+                    ],
+                    advanced_elvin: [
+                        [["F", "K", "G"], ["c", "r", "G"], ["A", "L", "A"]],
+                        [["F", "K", "G", "/"], ["c", "r", "G", "/"], ["e", "l", "G", "/"], ["A", "L", "A", "/"]]
+                    ]
+                },
+                six_tuples: {
+                    six_stroke: [[["c", "R", "A", "//"], ["c", "l", "G", "//"], ["c", "l", "G", "//"], ["e", "r", "G", "//"], ["e", "r", "G", "//"], ["A", "L", "A", "//"]]],
+                    paradiddle_diddle: [[["c", "R", "A", "//"], ["c", "L", "A", "//"], ["e", "r", "G", "//"], ["e", "r", "G", "//"], ["A", "l", "G", "//"], ["A", "l", "G", "//"]]],
+                    double_stroke: [[["c", "r", "G", "//"], ["c", "r", "G", "//"], ["e", "l", "G", "//"], ["e", "l", "G", "//"], ["A", "r", "G", "//"], ["A", "r", "G", "//"]]],
+                    para_special_1: [[["c", "r", "G", "//"], ["c", "l", "G", "//"], ["e", "r", "G", "//"], ["e", "r", "G", "//"], ["e", "l", "G", "//"], ["c", "r", "G", "//"]]],
+                    para_special_2: [[["e", "l", "G", "//"], ["e", "l", "G", "//"], ["c", "r", "G", "//"], ["c", "l", "G", "//"], ["A", "r", "G", "//"], ["A", "r", "G", "//"]]]
                 }
-              });
             }
-          },
-          onFinished: function() {
-            const svg = document.querySelector("#paper svg");
-            if (svg) {
-              const notes = svg.querySelectorAll(".abcjs-highlight");
-              notes.forEach(note => note.classList.remove("abcjs-highlight"));
-            }
-          }
         };
 
-        const synthControl = new window.ABCJS.synth.SynthController();
-        synthControl.load(audioRef.current, cursorControl, {
-          displayLoop: true,
-          displayRestart: true,
-          displayPlay: true,
-          displayProgress: true,
-          displayWarp: true 
-        });
-        
-        synthControl.setTune(visualObjForAudio, false, {
-          chordsOff: true 
-        }).catch(console.error);
+        // --- 手順・オーケストレーションガード ---
+        function applyStickingGuard(fullPhrase) {
+            let lastHand = "";
+            let lastActualPitch = ""; 
+            let lastHandIdx = -1;
+            let handCount = 0;
+            let kickCount = 0;
 
-        synthRef.current = synthControl;
-      }
-    }
-  }, [abcString, audioAbcString, backingAbcString, isBackingOnly, abcjsLoaded]);
+            for (let i = 0; i < fullPhrase.length; i++) {
+                let hit = fullPhrase[i];
+                if (!hit || hit[0].includes("z")) continue; 
 
-  useEffect(() => {
-    if (abcjsLoaded && chords[0] !== "" && abcString === "") {
-      generateEtude();
-    }
-  }, [abcjsLoaded, chords]);
+                let sticking = hit[1] || "";
+                let hasKick = sticking.includes("K");
+                let hand = "";
+                if (sticking.toUpperCase().includes("R")) hand = "R";
+                else if (sticking.toUpperCase().includes("L")) hand = "L";
 
-  const handleMeasureCountChange = (e) => {
-    setMeasureCount(Number(e.target.value));
-  };
+                if (hand !== "") {
+                    if (hand === lastHand) {
+                        hit[2] = 'G'; // ダブルは原則ゴースト
+                        if (lastHandIdx !== -1) fullPhrase[lastHandIdx][2] = 'G'; 
 
-  const handleChordChange = (index, value) => {
-    const newChords = [...chords];
-    newChords[index] = value;
-    setChords(newChords);
-    setCurrentSongTitle(""); 
-  };
-
-  const setPreset = (type) => {
-    const newChords = Array(64).fill("");
-    if (type === '251') {
-      setMeasureCount(4);
-      ["Dm7", "G7", "Cmaj7", "Cmaj7"].forEach((c, i) => newChords[i] = c);
-    } else if (type === 'blues') {
-      setMeasureCount(12);
-      const blues = ["F7", "Bb7", "F7", "Cm7 F7", "Bb7", "Bdim7", "F7", "Am7 D7", "Gm7", "C7", "F7 D7", "Gm7 C7"];
-      blues.forEach((c, i) => newChords[i] = c);
-    } else if (type === 'autumn') {
-      setMeasureCount(8);
-      const autumn = ["Cm7", "F7", "Bbmaj7", "Ebmaj7", "Am7b5", "D7", "Gm7", "Gm7"];
-      autumn.forEach((c, i) => newChords[i] = c);
-    }
-    setChords(newChords);
-    setCurrentSongTitle(""); 
-  };
-
-  const selectStandardSong = (song) => {
-    setMeasureCount(song.measures);
-    const newChords = Array(64).fill("");
-    song.chords.forEach((c, i) => { newChords[i] = c; });
-    setChords(newChords);
-    setCurrentSongTitle(song.title); 
-    setIsModalOpen(false); 
-  };
-
-  const getMidiOffset = (noteStr) => {
-    const map = {
-      'C': 0, 'C#': 1, 'Db': 1, 'D': 2, 'D#': 3, 'Eb': 3,
-      'E': 4, 'F': 5, 'F#': 6, 'Gb': 6, 'G': 7, 'G#': 8, 'Ab': 8,
-      'A': 9, 'A#': 10, 'Bb': 10, 'B': 11
-    };
-    return map[noteStr] || 0;
-  };
-
-  const getChordTones = (chordStr) => {
-    if (!chordStr) return [0, 4, 7, 11].map(i => 60 + i); 
-
-    const match = chordStr.match(/^[A-G][#b]?/);
-    if (!match) return [0, 4, 7, 11].map(i => 60 + i);
-
-    let root = match[0];
-    let rootMidi = 60 + getMidiOffset(root); 
-    
-    let type = chordStr.substring(root.length);
-    let intervals = [0, 4, 7]; 
-    
-    if (type.includes('maj7') || type.includes('M7') || type.includes('△7')) {
-        intervals = [0, 4, 7, 11];
-    } else if (type.includes('m7b5') || type.includes('h')) {
-        intervals = [0, 3, 6, 10];
-    } else if (type.includes('dim')) {
-        intervals = [0, 3, 6, 9];
-    } else if (type.includes('mM7') || type.includes('m#7')) {
-        intervals = [0, 3, 7, 11];
-    } else if (type.includes('m7') || type.includes('-7')) {
-        intervals = [0, 3, 7, 10];
-    } else if (type.includes('m') || type.includes('-')) {
-        intervals = [0, 3, 7];
-    } else if (type.includes('alt')) {
-        intervals = [0, 1, 3, 4, 8, 10];
-    } else if (type.includes('7') || type.includes('9') || type.includes('13')) {
-        const flavor = Math.random();
-        if (flavor < 0.35) {
-            intervals = [0, 1, 3, 4, 8, 10];
-        } else if (flavor < 0.70) {
-            intervals = [0, 1, 3, 4, 6, 9, 10];
-        } else {
-            intervals = [0, 2, 4, 7, 10];
-        }
-    } else if (type.includes('aug')) {
-        intervals = [0, 4, 8];
-    }
-    
-    return intervals.map(i => rootMidi + i);
-  };
-
-  const getChordInfo = (chordStr) => {
-    if (!chordStr) return { intervals: [0, 4, 7, 11].map(i => 60 + i), isAlteredTension: false }; 
-
-    const match = chordStr.match(/^[A-G][#b]?/);
-    if (!match) return { intervals: [0, 4, 7, 11].map(i => 60 + i), isAlteredTension: false }; 
-
-    let root = match[0];
-    let rootMidi = 60 + getMidiOffset(root); 
-    
-    let type = chordStr.substring(root.length);
-    let intervals = [0, 4, 7]; 
-    let isAlteredTension = false;
-    
-    if (type.includes('maj7') || type.includes('M7') || type.includes('△7')) {
-        intervals = [0, 4, 7, 11];
-    } else if (type.includes('m7b5') || type.includes('h')) {
-        intervals = [0, 3, 6, 10];
-    } else if (type.includes('dim')) {
-        intervals = [0, 3, 6, 9];
-    } else if (type.includes('mM7') || type.includes('m#7')) {
-        intervals = [0, 3, 7, 11];
-    } else if (type.includes('m7') || type.includes('-7')) {
-        intervals = [0, 3, 7, 10];
-    } else if (type.includes('m') || type.includes('-')) {
-        intervals = [0, 3, 7];
-    } else if (type.includes('alt')) {
-        intervals = [0, 1, 3, 4, 8, 10];
-        isAlteredTension = true;
-    } else if (type.includes('7') || type.includes('9') || type.includes('13')) {
-        const flavor = Math.random();
-        if (flavor < 0.35) {
-            intervals = [0, 1, 3, 4, 8, 10];
-            isAlteredTension = true;
-        } else if (flavor < 0.70) {
-            intervals = [0, 1, 3, 4, 6, 9, 10];
-            isAlteredTension = true;
-        } else {
-            intervals = [0, 2, 4, 7, 10];
-        }
-    } else if (type.includes('aug')) {
-        intervals = [0, 4, 8];
-    }
-    
-    return { intervals: intervals.map(i => rootMidi + i), isAlteredTension };
-  };
-
-  const generateEtude = () => {
-    const measuresPerLine = 4;
-
-    let headerDisplay = "X: 1\n";
-    headerDisplay += "T: Jazz Solo Etude\n";
-    headerDisplay += "M: 4/4\n";
-    headerDisplay += "L: 1/8\n";
-    headerDisplay += "Q: 1/4=140\n"; 
-    headerDisplay += "K: C\n"; 
-
-    let headerAudio = "X: 1\n";
-    headerAudio += "T: Jazz Solo Etude\n";
-    headerAudio += "M: 4/4\n";
-    headerAudio += "L: 1/8\n";
-    headerAudio += "Q: 1/4=140\n"; 
-    headerAudio += "K: C\n"; 
-    headerAudio += "%%staves (1 2 3)\n";
-    headerAudio += "V: 1 clef=treble\n";
-    headerAudio += "%%MIDI program 0\n"; 
-    headerAudio += "%%MIDI control 7 127\n"; 
-    headerAudio += "V: 2 clef=treble\n";
-    headerAudio += "%%MIDI program 4\n"; 
-    headerAudio += "%%MIDI control 7 60\n"; 
-    headerAudio += "V: 3 clef=bass\n";
-    headerAudio += "%%MIDI program 39\n"; 
-    headerAudio += "%%MIDI control 7 100\n"; 
-
-    let headerBacking = "X: 1\n";
-    headerBacking += "T: Jazz Solo Etude (Backing Track)\n";
-    headerBacking += "M: 4/4\n";
-    headerBacking += "L: 1/8\n";
-    headerBacking += "Q: 1/4=140\n"; 
-    headerBacking += "K: C\n"; 
-    headerBacking += "%%staves (1 2 3)\n";
-    headerBacking += "V: 1 clef=treble\n";
-    headerBacking += "%%MIDI program 0\n"; 
-    headerBacking += "%%MIDI control 7 0\n"; 
-    headerBacking += "V: 2 clef=treble\n";
-    headerBacking += "%%MIDI program 4\n"; 
-    headerBacking += "%%MIDI control 7 60\n";
-    headerBacking += "V: 3 clef=bass\n";
-    headerBacking += "%%MIDI program 39\n"; 
-    headerBacking += "%%MIDI control 7 100\n";
-
-    const getAbcNote = (midi, measureAccidentalsRef, currentChord) => {
-      let isFlatKey = false;
-      if (currentChord) {
-         const match = currentChord.match(/^[A-G][#b]?/);
-         if (match) {
-             const root = match[0];
-             const flatRoots = ['F', 'Bb', 'Eb', 'Ab', 'Db', 'Gb'];
-             if (flatRoots.includes(root)) {
-                 isFlatKey = true;
-             } else if (currentChord.includes('m') && !currentChord.includes('maj')) {
-                 if (['C', 'G', 'D'].includes(root)) {
-                     isFlatKey = true;
-                 }
-             }
-         }
-      }
-      
-      let noteNames, defaultAccidentals;
-      
-      if (isFlatKey) {
-        noteNames = ['C', 'D', 'D', 'E', 'E', 'F', 'G', 'G', 'A', 'A', 'B', 'B'];
-        defaultAccidentals = ['', '_', '', '_', '', '', '_', '', '_', '', '_', '']; 
-      } else {
-        noteNames = ['C', 'C', 'D', 'D', 'E', 'F', 'F', 'G', 'G', 'A', 'A', 'B'];
-        defaultAccidentals = ['', '^', '', '^', '', '', '^', '', '^', '', '^', '']; 
-      }
-      
-      const octave = Math.floor(midi / 12) - 1;
-      const noteClass = midi % 12;
-      const baseName = noteNames[noteClass];
-      const targetAcc = defaultAccidentals[noteClass];
-      
-      let abcName = baseName;
-      
-      if (octave <= 3) {
-          for (let k = 4; k > octave; k--) abcName += ",";
-      } else if (octave === 4) {
-          abcName = baseName;
-      } else if (octave === 5) {
-          abcName = baseName.toLowerCase();
-      } else if (octave >= 6) {
-          abcName = baseName.toLowerCase();
-          for (let k = 5; k < octave; k++) abcName += "'";
-      }
-      
-      const key = baseName + octave;
-      const currentAcc = measureAccidentalsRef[key] !== undefined ? measureAccidentalsRef[key] : '';
-      
-      let prefix = "";
-      if (currentAcc !== targetAcc) {
-          prefix = targetAcc === '' ? '=' : targetAcc;
-          measureAccidentalsRef[key] = targetAcc;
-      }
-      return prefix + abcName;
-    };
-
-    const getAbcChord = (chordStr, measureAccidentalsRef) => {
-      let baseChordStr = chordStr.replace(/alt/g, '7'); 
-      const tones = getChordTones(baseChordStr);
-      const upperTones = tones.length > 1 ? tones.slice(1) : tones;
-      const abcNotes = upperTones.map(midi => getAbcNote(midi - 12, measureAccidentalsRef, chordStr));
-      return "[" + abcNotes.join("") + "]";
-    };
-
-    const getAbcBassBeat = (chordStr, measureAccidentalsRef) => {
-      const match = chordStr.match(/^[A-G][#b]?/);
-      if (!match) return "z";
-      let root = match[0];
-      let rootMidi = 36 + getMidiOffset(root); 
-      return getAbcNote(rootMidi, measureAccidentalsRef, chordStr);
-    };
-
-    let flatChords = [];
-    for (let i = 0; i < measureCount; i++) {
-        let chordStr = chords[i] || "Cmaj7";
-        let chordList = chordStr.split(/\s+/).filter(c => c.length > 0);
-        if (chordList.length === 0) chordList = ["Cmaj7"];
-        
-        let chordInfos = chordList.map(c => ({ chord: c, info: getChordInfo(c) }));
-        
-        for (let s = 0; s < 8; s++) {
-            let currentIdx = 0;
-            if (chordList.length >= 2 && s >= 4) currentIdx = 1;
-            if (chordList.length >= 4) currentIdx = Math.floor(s/2);
-            
-            flatChords.push({ 
-                measure: i, 
-                slot: s, 
-                chord: chordInfos[currentIdx].chord,
-                tones: chordInfos[currentIdx].info.intervals,
-                isAltered: chordInfos[currentIdx].info.isAlteredTension
-            });
-        }
-    }
-
-    let totalSlots = flatChords.length;
-    let notes = new Array(totalSlots).fill(null);
-    let isRest = new Array(totalSlots).fill(false);
-
-    let firstChord = flatChords[0].chord;
-    let firstTones = flatChords[0].tones;
-    notes[0] = firstTones[0] + 12; 
-    
-    // モード奏法の判定と設定
-    let isModalTune = currentSongTitle === "Impressions" || currentSongTitle === "So What";
-    let isOut = false;
-    let outCounter = 0;
-    let usePenta = true;
-    
-    // 名手のリック（ルートからの半音程）
-    let currentLick = null;
-    let lickIndex = 0;
-    let lickOctave = 0;
-    const modalLicks = [
-        [7, 5, 3, 2, 0], // Miles Davis風: ドリアン下降
-        [0, 2, 3, 5, 7], // Miles Davis風: ドリアン上昇
-        [0, 2, 3, 7],    // John Coltrane風: 1-2-b3-5
-        [0, 5, 10, 15],  // McCoy/Coltrane風: 4度堆積
-        [10, 7, 5, 3, 0] // ペンタトニック下降
-    ];
-    
-    for (let index = 1; index < totalSlots; index++) {
-        let prevTarget = notes[index - 1];
-        let prevPrevTarget = index >= 2 ? notes[index - 2] : null; 
-        let prevPrevPrevTarget = index >= 3 ? notes[index - 3] : null; 
-        let currentChord = flatChords[index].chord;
-        let chordTones = flatChords[index].tones;
-        
-        if (isModalTune) {
-            let isChordChange = index > 0 && currentChord !== flatChords[index-1].chord;
-            
-            if (isChordChange) {
-                isOut = false;
-                outCounter = 0;
-                currentLick = null; // コードが変わったらリックは中断
-            }
-
-            // 一定の確率で名手のリックを挿入開始
-            if (currentLick === null && !isOut && Math.random() < 0.05) {
-                currentLick = modalLicks[Math.floor(Math.random() * modalLicks.length)];
-                lickIndex = 0;
-                // リックのスタート高さをランダムに調整（0または1オクターブ上）
-                lickOctave = Math.random() < 0.5 ? 0 : 1; 
-            }
-
-            // リック挿入中の処理
-            if (currentLick !== null) {
-                let rootMidi = 60 + getMidiOffset(currentChord.match(/^[A-G][#b]?/)[0]);
-                let rawMidi = rootMidi + currentLick[lickIndex] + (lickOctave * 12);
-                
-                let target = rawMidi;
-                while (target < 55) target += 12;
-                while (target > 84) target -= 12;
-
-                // 前の音との極端な跳躍を防ぐためのオクターブ補正
-                let minDistToPrev = Math.abs(target - prevTarget);
-                let bestTarget = target;
-                for (let oct = -1; oct <= 1; oct++) {
-                    let t = target + oct * 12;
-                    if (t >= 55 && t <= 84 && Math.abs(t - prevTarget) < minDistToPrev) {
-                        minDistToPrev = Math.abs(t - prevTarget);
-                        bestTarget = t;
+                        // 移動ダブル禁止
+                        let targetPitch = lastActualPitch;
+                        if (!targetPitch.includes("style=x")) {
+                            if (!hit[0].includes("z")) hit[0] = targetPitch;
+                        }
+                        
+                        handCount++;
+                        if (handCount > 2) {
+                            let newBase = (hand === "R") ? "L" : "R";
+                            hit[1] = hit[1].replace(/[RrLl]/g, newBase.toLowerCase());
+                            lastHand = newBase;
+                            handCount = 1;
+                            lastHandIdx = i;
+                        } else {
+                            lastHandIdx = i;
+                        }
+                    } else {
+                        handCount = 1;
+                        lastHand = hand;
+                        lastHandIdx = i;
                     }
+                } else if (sticking === "K" || sticking === "") {
+                    handCount = 0;
+                    lastHand = "";
+                    lastHandIdx = -1;
                 }
 
-                notes[index] = bestTarget;
-                lickIndex++;
-                if (lickIndex >= currentLick.length) {
-                    currentLick = null;
+                if (!hit[0].includes("z")) {
+                    lastActualPitch = hit[0];
                 }
-                continue; // リック中は以下の通常生成処理をスキップ
-            }
 
-            // リック中でない場合のインサイド・アウト処理
-            if (!isOut && outCounter === 0 && Math.random() < 0.08) {
-                isOut = true;
-                outCounter = 4 + Math.floor(Math.random() * 6); 
-            }
-            if (isOut) {
-                outCounter--;
-                if (outCounter <= 0) isOut = false;
-            }
-            
-            if (index % 8 === 0) {
-                usePenta = Math.random() < 0.7; 
-            }
-
-            let rootMidi = 60 + getMidiOffset(currentChord.match(/^[A-G][#b]?/)[0]);
-            if (isOut) rootMidi += 1; 
-
-            let intervals = usePenta ? [0, 3, 5, 7, 10] : [0, 2, 3, 5, 7, 9, 10];
-            let scaleTones = [];
-            for(let oct = -2; oct <= 2; oct++){
-                intervals.forEach(i => scaleTones.push(rootMidi + i + oct * 12));
-            }
-            scaleTones = scaleTones.filter(n => n >= 55 && n <= 84).sort((a,b)=>a-b);
-
-            let target = prevTarget;
-            let minDist = 9999;
-            
-            let preferFourth = Math.random() < 0.4; 
-            let preferStep = Math.random() < 0.5; 
-
-            for (let i = 0; i < scaleTones.length; i++) {
-                let n = scaleTones[i];
-                let dist = Math.abs(n - prevTarget);
-                
-                if (n === prevTarget) dist += 1000; 
-                if (n === prevPrevTarget) dist += 500;
-                if (n === prevPrevPrevTarget) dist += 50;
-                
-                if (preferFourth) {
-                    let jumpScore = Math.abs(dist - 5); 
-                    if (jumpScore < minDist) {
-                        minDist = jumpScore;
-                        target = n;
-                    }
-                } else if (preferStep) {
-                    dist += Math.random() * 2; 
-                    if (dist < minDist) {
-                        minDist = dist;
-                        target = n;
+                // キック連打制限
+                if (hasKick) {
+                    kickCount++;
+                    if (kickCount > 2) {
+                        let updatedSticking = sticking.replace("+K", "").replace("K", "");
+                        if (hit[0].includes("F") || hit[0].includes("f")) {
+                            hit[0] = "c"; 
+                            let nextHand = (lastHand === "R") ? "l" : "r";
+                            hit[1] = nextHand;
+                            hit[2] = 'G';
+                            lastHand = nextHand.toUpperCase();
+                            handCount = 1;
+                        } else {
+                            hit[1] = updatedSticking;
+                        }
+                        kickCount = 0; 
                     }
                 } else {
-                    let jumpScore = Math.abs(dist - 7); 
-                    if (jumpScore < minDist) {
-                        minDist = jumpScore;
-                        target = n;
-                    }
+                    kickCount = 0;
                 }
             }
-            notes[index] = target;
+            return fullPhrase;
+        }
 
-        } else {
-            let target = prevTarget;
-            let minDist = 9999;
-            
-            let preferJump = Math.random() < 0.2;
+        function slotToNotesAndWords(slot, feel) {
+            let notes = "";
+            let wordsArr = [];
+            const processNote = (s, force16th = false) => {
+                let [note, sticking, dyn, duration] = s;
+                if (note.includes("z")) {
+                    wordsArr.push("_");
+                    return note + (duration || (force16th ? "/" : ""));
+                }
+                
+                let velocity = (dyn === 'A') ? "!ff!" : "!ppp!";
+                let prefix = (dyn === 'A') ? "!>!" + velocity : velocity;
+                
+                let displaySticking = sticking;
+                if (displaySticking) {
+                    // Kの省略
+                    if (/[RL]/i.test(displaySticking)) displaySticking = displaySticking.replace(/\+?K/gi, "");
+                    if (displaySticking.toUpperCase() === "K") {
+                        displaySticking = "K";
+                    } else {
+                        displaySticking = (dyn !== 'A') ? displaySticking.toLowerCase() : displaySticking.toUpperCase();
+                    }
+                }
+                wordsArr.push(displaySticking || "_");
+                return prefix + note + (duration || (force16th ? "/" : ""));
+            };
 
-            for(let oct = -1; oct <= 1; oct++) {
-                chordTones.forEach(ct => {
-                    let n = ct + (oct * 12);
-                    if (n >= 55 && n <= 84) {
-                        let dist = Math.abs(n - prevTarget);
-                        if (n === prevTarget) dist += 1000; 
-                        if (n === prevPrevTarget) dist += 500;
-                        if (n === prevPrevPrevTarget) dist += 50;
+            if (slot.length === 1) {
+                notes = processNote(slot[0]);
+            } else if (feel === 'swing') {
+                if (slot.length === 6) notes = "(6" + slot.map(s => processNote(s)).join("");
+                else if (slot.length === 4) notes = slot.map(s => processNote(s)).join("");
+                else notes = "(3" + slot.map(s => processNote(s)).join("");
+            } else if (slot.length === 3) {
+                const has16th = slot.some(s => s[3] === "/");
+                notes = has16th ? slot.map(s => processNote(s)).join("") : "(3" + slot.map(s => processNote(s)).join("");
+            } else {
+                notes = slot.map(s => processNote(s, slot.length === 4)).join("");
+            }
+            return { notes, words: wordsArr.join(" ") };
+        }
+
+        function skeletonToAbc(skeleton, difficulty, feel, isTradeMode) {
+            if (!skeleton) return "";
+            const generateSystem = (bars) => {
+                let flatPhrase = [];
+                bars.forEach((barSkeleton, barIdx) => {
+                    let prevWas6 = false;
+                    barSkeleton.forEach((beatSkeleton, beatIdx) => {
+                        const { key, isCrash, variationIndex } = beatSkeleton;
+                        const feelConfig = MOTIF_LIBRARY[feel];
                         
-                        if (preferJump) {
-                            let jumpScore = Math.abs(dist - 7); 
-                            if (jumpScore < minDist) {
-                                minDist = jumpScore;
-                                target = n;
+                        let keyToUse = key;
+                        if (difficulty === 'extreme' && feel === 'straight' && key === 'rest') {
+                            keyToUse = (variationIndex % 100 < 25) ? 'glitch_triplet' : 'glitch_fill';
+                        }
+                        
+                        const keyConfig = feelConfig[keyToUse] || feelConfig['rest'];
+                        
+                        let options;
+                        if (feel === 'swing' && difficulty === 'advanced_elvin') {
+                            // 確率制御
+                            let prob = 0;
+                            if (barIdx === 0) prob = 0.01;
+                            else if (barIdx === 1) prob = 0.05;
+                            else if (barIdx === 2) prob = 0.08;
+                            else if (barIdx === 3) prob = 0.10;
+
+                            let isComplex = Math.random() < prob;
+                            
+                            if (isComplex) {
+                                let pool = [];
+                                if (keyConfig.advanced_elvin) {
+                                    pool = keyConfig.advanced_elvin.filter(m => m.length === 4 || m.length === 6);
+                                }
+                                if (pool.length === 0 || Math.random() < 0.5) {
+                                    let sixPool = [...feelConfig.six_tuples.six_stroke, ...feelConfig.six_tuples.paradiddle_diddle, ...feelConfig.six_tuples.double_stroke, ...feelConfig.six_tuples.para_special_1];
+                                    options = [sixPool[variationIndex % sixPool.length]];
+                                } else {
+                                    options = [pool[variationIndex % pool.length]];
+                                }
+                                prevWas6 = (options[0].length === 6);
+                            } else {
+                                options = keyConfig.advanced_elvin || keyConfig.advanced || keyConfig.basic;
+                                options = options.filter(m => m.length === 3);
+                                if (options.length === 0) options = keyConfig.basic;
+                                prevWas6 = false;
                             }
                         } else {
-                            dist += Math.random() * 3; 
-                            if (dist < minDist) {
-                                minDist = dist;
-                                target = n;
+                            options = keyConfig[difficulty] || keyConfig['basic'];
+                        }
+
+                        if (!options || options.length === 0) {
+                            options = keyConfig['basic'] || feelConfig['rest']['basic'];
+                        }
+
+                        let motif = JSON.parse(JSON.stringify(options[variationIndex % options.length]));
+                        
+                        // Basicモード防護ガード
+                        if (difficulty === 'basic') {
+                            motif.forEach(step => {
+                                if (!step[0].includes("z")) {
+                                    step[0] = "c";
+                                    if (step[1]) step[1] = step[1].replace(/\+K/g, "").replace(/K/g, "");
+                                }
+                            });
+                        }
+
+                        if (difficulty !== 'basic' && isCrash) {
+                            for (let i = 0; i < motif.length; i++) { 
+                                if (motif[i][2] === 'A') { 
+                                    motif[i][0] = "[!style=x!fF]"; 
+                                    motif[i][1] = (motif[i][1] || "R").replace(/\+?K/gi, "") + "+K"; 
+                                    break; 
+                                } 
                             }
                         }
-                    }
+                        flatPhrase.push({ motif, isBarEnd: (beatIdx === 3) });
+                    });
                 });
-            }
-            notes[index] = target;
-        }
-    }
-
-    let isApproach = new Array(totalSlots).fill(false);
-    for (let index = 0; index < totalSlots - 1; index++) {
-        let isChordChange = flatChords[index].chord !== flatChords[index + 1].chord;
-        
-        // モード曲の場合はアプローチノートによるクロマチックな解決を無効化する
-        if (isChordChange && !isModalTune) {
-            let forceApproach = flatChords[index].isAltered;
-
-            if (forceApproach || Math.random() < 0.6) {
-                let nextTarget = notes[index + 1];
-                let appType = Math.random();
-                let approachNote = nextTarget;
                 
-                if (appType < 0.3) approachNote = nextTarget - 1; 
-                else if (appType < 0.6) approachNote = nextTarget + 1; 
-                else if (appType < 0.8) approachNote = nextTarget + 2; 
-                else approachNote = nextTarget - 2; 
-
-                if (approachNote < 55) approachNote += 12;
-                if (approachNote > 84) approachNote -= 12;
+                let allSteps = []; flatPhrase.forEach(m => allSteps.push(...m.motif));
+                applyStickingGuard(allSteps);
                 
-                if (index > 0) {
-                    while (approachNote === notes[index - 1] || (index > 1 && approachNote === notes[index - 2])) {
-                        approachNote += (Math.random() < 0.5 ? 1 : -1);
-                    }
-                }
-                
-                notes[index] = approachNote;
-                isApproach[index] = true; 
-            }
-        }
-    }
-
-    for (let i = 0; i < measureCount; i++) {
-        let slots = [1,1,1,1,1,1,1,1];
-        
-        if (i < measureCount - 1) { 
-            const patterns = [
-                [1,1,1,1,1,1,1,1], 
-                [1,1,1,1,1,1,1,1], 
-                [0,1,1,1,1,1,1,1], 
-                [0,0,1,1,1,1,1,1], 
-                [0,0,0,1,1,1,1,1], 
-                [1,1,1,1,0,1,1,1], 
-                [1,1,1,1,0,0,1,1], 
-                [1,1,1,1,1,1,0,1], 
-                [1,1,0,0,1,1,1,1], 
-                [1,1,1,1,1,1,1,0]  
-            ];
-            slots = patterns[Math.floor(Math.random() * patterns.length)];
-
-            if (flatChords[i * 8 + 7].isAltered) {
-                slots[7] = 1;
-            }
-        } else {
-            slots = [1,1,1,1, 0,0,0,0];
-        }
-
-        if (i > 0) {
-            let prevLastIndex = i * 8 - 1;
-            let prevWasAltered = flatChords[prevLastIndex].isAltered;
-
-            if (prevWasAltered || isApproach[prevLastIndex]) {
-                slots[0] = 1;
-            } else if (!isRest[prevLastIndex]) {
-                if (Math.random() < 0.05) {
-                    slots[0] = 0;
-                    slots[1] = 1; 
-                } else {
-                    slots[0] = 1;
-                }
-            }
-        } else if (i === 0) {
-            if (Math.random() < 0.5) {
-                slots[0] = 0;
-                if (Math.random() < 0.5) slots[1] = 0;
-            }
-        }
-
-        for (let s = 0; s < 7; s++) {
-            let currentIdx = i * 8 + s;
-            let nextIdx = i * 8 + s + 1;
-            if (flatChords[currentIdx].chord !== flatChords[nextIdx].chord) {
-                if (flatChords[currentIdx].isAltered) {
-                    slots[s] = 1;
-                    slots[s + 1] = 1;
-                }
-            }
-        }
-
-        for (let s = 0; s < 8; s++) {
-            if (slots[s] === 0) isRest[i * 8 + s] = true;
-        }
-    }
-
-    let consecutiveRests = 0;
-    for (let i = 0; i < totalSlots; i++) {
-        if (isRest[i]) {
-            consecutiveRests++;
-            if (consecutiveRests > 3) {
-                isRest[i] = false;
-                consecutiveRests = 0;
-            }
-        } else {
-            consecutiveRests = 0;
-        }
-    }
-
-    let isTriplet = new Array(measureCount * 4).fill(false);
-    let isQuarter = new Array(measureCount * 4).fill(false);
-    for (let i = 0; i < measureCount; i++) {
-        let maxBeat = (i === measureCount - 1) ? 2 : 4; 
-        for (let beat = 0; beat < maxBeat; beat++) {
-            let idx1 = i * 8 + beat * 2;
-            let idx2 = i * 8 + beat * 2 + 1;
-            
-            if (!isRest[idx1] && !isRest[idx2]) {
-                if (Math.random() < 0.05 && notes[idx1] !== notes[idx2]) { 
-                    isTriplet[i * 4 + beat] = true;
-                }
-            }
-            
-            if (!isTriplet[i * 4 + beat] && !isRest[idx1]) {
-                if (Math.random() < 0.005) { 
-                    isQuarter[i * 4 + beat] = true;
-                }
-            }
-        }
-    }
-
-    let fullMelody = ""; 
-    let fullAccompaniment = "";
-    let fullBass = "";
-
-    for (let i = 0; i < measureCount; i++) {
-      let abcMeasureV1 = "";
-      let abcMeasureV2 = "";
-      let abcMeasureV3 = "";
-      let measureAccidentalsV1 = {}; 
-      let measureAccidentalsV2 = {};
-      let measureAccidentalsV3 = {};
-
-      let chordsInMeasure = (chords[i] || "Cmaj7").split(/\s+/).filter(c => c.length > 0);
-      if (chordsInMeasure.length === 0) chordsInMeasure = ["Cmaj7"];
-
-      let dynamicsV2 = (i === 0) ? "!mp! " : "";
-      let dynamicsV3 = (i === 0) ? "!mf! " : "";
-
-      if (i === measureCount - 1) {
-          abcMeasureV2 += dynamicsV2 + getAbcChord(chordsInMeasure[0], measureAccidentalsV2) + "8 |]";
-          let b1 = getAbcBassBeat(chordsInMeasure[0], measureAccidentalsV3);
-          abcMeasureV3 += dynamicsV3 + b1 + "8 |]";
-      } else {
-          if (chordsInMeasure.length === 1) {
-              abcMeasureV2 += dynamicsV2 + getAbcChord(chordsInMeasure[0], measureAccidentalsV2) + "8";
-              let b1 = getAbcBassBeat(chordsInMeasure[0], measureAccidentalsV3);
-              abcMeasureV3 += dynamicsV3 + b1 + "8";
-          } else {
-              let c1 = getAbcChord(chordsInMeasure[0], measureAccidentalsV2);
-              let c2 = getAbcChord(chordsInMeasure[1], measureAccidentalsV2);
-              abcMeasureV2 += dynamicsV2 + c1 + "4 " + c2 + "4";
-              
-              let b1 = getAbcBassBeat(chordsInMeasure[0], measureAccidentalsV3);
-              let b2 = getAbcBassBeat(chordsInMeasure[1], measureAccidentalsV3);
-              abcMeasureV3 += dynamicsV3 + b1 + "4 " + b2 + "4";
-          }
-          abcMeasureV2 += " | ";
-          abcMeasureV3 += " | ";
-      }
-
-      if (i === measureCount - 1) {
-         let lastChord = flatChords[i * 8].chord;
-         
-         for (let beat = 0; beat < 2; beat++) {
-            let index1 = i * 8 + beat * 2;
-            let index2 = i * 8 + beat * 2 + 1;
-            
-            if (beat === 0) abcMeasureV1 += `"${chordsInMeasure[0]}"`;
-
-            if (isTriplet[i * 4 + beat]) {
-                let n1 = notes[index1];
-                let n3 = notes[index2];
-                let n2;
-                let diff = n3 - n1;
-                
-                if (Math.abs(diff) <= 2) {
-                    n2 = n1 + (diff > 0 ? -1 : 1);
-                    if (Math.random() < 0.5) n2 = n3 + (diff > 0 ? 1 : -1);
-                } else {
-                    if (Math.random() < 0.5) {
-                        n2 = n3 + (diff > 0 ? -1 : 1);
-                    } else {
-                        n2 = Math.round((n1 + n3) / 2);
-                    }
-                }
-                
-                if (n2 < 55) n2 += 12;
-                if (n2 > 84) n2 -= 12;
-
-                while (n2 === n1 || n2 === n3) {
-                    n2 += 1;
-                }
-
-                abcMeasureV1 += "(3" + getAbcNote(n1, measureAccidentalsV1, flatChords[index1].chord) + getAbcNote(n2, measureAccidentalsV1, flatChords[index1].chord) + getAbcNote(n3, measureAccidentalsV1, flatChords[index2].chord);
-            } else if (isQuarter[i * 4 + beat]) {
-                abcMeasureV1 += getAbcNote(notes[index1], measureAccidentalsV1, flatChords[index1].chord) + "2";
+                let notesStr = "", wordsStr = "w: ", stepIdx = 0;
+                flatPhrase.forEach(m => {
+                    let motifToProcess = []; for(let i=0; i<m.motif.length; i++) motifToProcess.push(allSteps[stepIdx++]);
+                    let { notes, words } = slotToNotesAndWords(motifToProcess, feel);
+                    notesStr += notes + " "; wordsStr += words + " "; if (m.isBarEnd) { notesStr += "| "; wordsStr += "| "; }
+                });
+                return notesStr + "\n" + wordsStr + "\n";
+            };
+            let body = generateSystem(skeleton);
+            if (isTradeMode) {
+                body += "z2 z2 z2 z2 | z2 z2 z2 z2 | z2 z2 z2 z2 | z2 z2 z2 z2 |] \nw: | | | | \n";
             } else {
-                let str1 = isRest[index1] ? "z" : getAbcNote(notes[index1], measureAccidentalsV1, flatChords[index1].chord);
-                let str2 = isRest[index2] ? "z" : getAbcNote(notes[index2], measureAccidentalsV1, flatChords[index2].chord);
-                
-                if (isRest[index1] && isRest[index2]) {
-                    abcMeasureV1 += "z2";
-                } else if (isRest[index1] || isRest[index2]) {
-                    abcMeasureV1 += str1 + " " + str2;
-                } else {
-                    abcMeasureV1 += str1 + str2;
-                }
+                body = body.trim().slice(0, -1) + "] \n";
             }
-            
-            let breakBeam = false;
-            if (beat === 1) breakBeam = true; 
-            if (isTriplet[i * 4 + beat] || isQuarter[i * 4 + beat] || (isRest[index1] && isRest[index2])) breakBeam = true; 
-            if (beat < 1 && (isTriplet[i * 4 + beat + 1] || isQuarter[i * 4 + beat + 1])) breakBeam = true; 
-            if (beat < 1 && !isQuarter[i * 4 + beat] && (isRest[index2] || isRest[i * 8 + (beat + 1) * 2])) breakBeam = true;
-
-            if (breakBeam) abcMeasureV1 += " ";
-         }
-         
-         let tones = getChordTones(lastChord);
-         let availableTones = tones.length > 1 ? tones.slice(1) : tones;
-         let prevNote = 64;
-         if (!isRest[i * 8 + 3]) prevNote = notes[i * 8 + 3];
-         else if (!isRest[i * 8 + 2]) prevNote = notes[i * 8 + 2];
-         
-         let closest = availableTones[0] + 12;
-         let minDist = 999;
-         for(let oct = -1; oct <= 1; oct++) {
-            availableTones.forEach(t => {
-                let n = t + (oct * 12) + 12; 
-                if (n >= 55 && n <= 84) { 
-                    let dist = Math.abs(n - prevNote);
-                    if (n === prevNote) dist += 1000;
-                    if (dist < minDist) {
-                       minDist = dist;
-                       closest = n;
-                    }
-                }
-            });
-         }
-         abcMeasureV1 += getAbcNote(closest, measureAccidentalsV1, lastChord) + "4 |]";
-         
-      } else {
-         for (let beat = 0; beat < 4; beat++) {
-            let index1 = i * 8 + beat * 2;
-            let index2 = i * 8 + beat * 2 + 1;
-            
-            if (beat === 0) abcMeasureV1 += `"${chordsInMeasure[0]}"`;
-            if (beat === 2 && chordsInMeasure.length >= 2) abcMeasureV1 += `"${chordsInMeasure[1]}"`;
-
-            if (isTriplet[i * 4 + beat]) {
-                let n1 = notes[index1];
-                let n3 = notes[index2]; 
-                let n2;
-                let diff = n3 - n1;
-                
-                if (Math.abs(diff) <= 2) {
-                    n2 = n1 + (diff > 0 ? -1 : 1);
-                    if (Math.random() < 0.5) n2 = n3 + (diff > 0 ? 1 : -1);
-                } else {
-                    if (Math.random() < 0.5) {
-                        n2 = n3 + (diff > 0 ? -1 : 1);
-                    } else {
-                        n2 = Math.round((n1 + n3) / 2);
-                    }
-                }
-                
-                if (n2 < 55) n2 += 12;
-                if (n2 > 84) n2 -= 12;
-
-                while (n2 === n1 || n2 === n3) {
-                    n2 += 1;
-                }
-
-                abcMeasureV1 += "(3" + getAbcNote(n1, measureAccidentalsV1, flatChords[index1].chord) + getAbcNote(n2, measureAccidentalsV1, flatChords[index1].chord) + getAbcNote(n3, measureAccidentalsV1, flatChords[index2].chord);
-            } else if (isQuarter[i * 4 + beat]) {
-                abcMeasureV1 += getAbcNote(notes[index1], measureAccidentalsV1, flatChords[index1].chord) + "2";
-            } else {
-                let str1 = isRest[index1] ? "z" : getAbcNote(notes[index1], measureAccidentalsV1, flatChords[index1].chord);
-                let str2 = isRest[index2] ? "z" : getAbcNote(notes[index2], measureAccidentalsV1, flatChords[index2].chord);
-                
-                if (isRest[index1] && isRest[index2]) {
-                    abcMeasureV1 += "z2";
-                } else if (isRest[index1] || isRest[index2]) {
-                    abcMeasureV1 += str1 + " " + str2;
-                } else {
-                    abcMeasureV1 += str1 + str2;
-                }
-            }
-            
-            let breakBeam = false;
-            if (beat === 1) breakBeam = true; 
-            if (isTriplet[i * 4 + beat] || isQuarter[i * 4 + beat] || (isRest[index1] && isRest[index2])) breakBeam = true; 
-            if (beat < 3 && (isTriplet[i * 4 + beat + 1] || isQuarter[i * 4 + beat + 1])) breakBeam = true; 
-            if (beat < 3 && !isQuarter[i * 4 + beat] && (isRest[index2] || isRest[i * 8 + (beat + 1) * 2])) breakBeam = true;
-
-            if (breakBeam) abcMeasureV1 += " ";
-         }
-         abcMeasureV1 += " | ";
-      }
-
-      fullMelody += abcMeasureV1;
-      fullAccompaniment += abcMeasureV2;
-      fullBass += abcMeasureV3;
-
-      if ((i + 1) % measuresPerLine === 0 || i === measureCount - 1) {
-          fullMelody += " \n";
-          fullAccompaniment += " \n";
-          fullBass += " \n";
-      }
-    }
-
-    setAbcString(headerDisplay + fullMelody);
-    
-    let finalAudioAbc = headerAudio;
-    finalAudioAbc += "[V: 1]\n" + fullMelody;
-    finalAudioAbc += "[V: 2]\n" + fullAccompaniment;
-    finalAudioAbc += "[V: 3]\n" + fullBass;
-    setAudioAbcString(finalAudioAbc);
-
-    let finalBackingAbc = headerBacking;
-    finalBackingAbc += "[V: 1]\n" + fullMelody;
-    finalBackingAbc += "[V: 2]\n" + fullAccompaniment;
-    finalBackingAbc += "[V: 3]\n" + fullBass;
-    setBackingAbcString(finalBackingAbc);
-  };
-
-  return (
-    <div className="min-h-screen bg-gray-50 print:bg-white text-gray-800 font-sans p-4 md:p-8 print:p-0">
-      <div className="max-w-5xl mx-auto space-y-6 print:space-y-0">
-        
-        <header className="flex items-center gap-3 border-b pb-4 print:hidden">
-          <div className="p-3 bg-blue-600 text-white rounded-xl shadow-sm">
-            <MusicIcon />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Jazz Etude Generator</h1>
-            <p className="text-sm text-gray-500">コード進行からジャズのアドリブソロ（エチュード）を自動生成</p>
-          </div>
-        </header>
-
-        <div className="flex flex-col gap-6 print:block">
-          
-          <div className="w-full space-y-6 bg-white p-5 rounded-2xl shadow-sm border border-gray-100 print:hidden">
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  小節数: {measureCount} 小節
-                </label>
-                <input 
-                  type="range" 
-                  min="4" 
-                  max="64" 
-                  step="2" 
-                  value={measureCount}
-                  onChange={handleMeasureCountChange}
-                  className="w-full accent-blue-600"
-                />
-                <div className="flex justify-between text-xs text-gray-400 mt-1">
-                  <span>4</span>
-                  <span>32</span>
-                  <span>64</span>
-                </div>
-              </div>
-
-              <div>
-                <span className="block text-sm font-semibold text-gray-700 mb-2">プリセット進行</span>
-                <div className="flex flex-wrap gap-2">
-                  <button onClick={() => setPreset('251')} className="px-3 py-1.5 text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition">2-5-1 (4小節)</button>
-                  <button onClick={() => setPreset('blues')} className="px-3 py-1.5 text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition">ブルース (12小節)</button>
-                  <button onClick={() => setPreset('autumn')} className="px-3 py-1.5 text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition">枯葉風 (8小節)</button>
-                </div>
-                
-                <div className="mt-3">
-                  <button 
-                    onClick={() => setIsModalOpen(true)} 
-                    className="w-full px-3 py-2 text-sm bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold rounded-lg transition border border-blue-200 flex items-center justify-center gap-2"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
-                    スタンダード曲から選ぶ
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <hr className="border-gray-100" />
-
-            <div>
-              <span className="block text-sm font-semibold text-gray-700 mb-2">コード進行</span>
-              <p className="text-xs text-gray-500 mb-3">※1小節に2つコードを入れる場合は「Dm7 G7」のようにスペースで区切ってください。</p>
-              
-              <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-8 gap-2 max-h-64 overflow-y-auto pr-2 custom-scrollbar">
-                {Array.from({ length: measureCount }).map((_, i) => (
-                  <div key={i} className="flex flex-col">
-                    <span className="text-[10px] text-gray-400 font-mono">{i + 1}</span>
-                    <input 
-                      type="text" 
-                      value={chords[i]} 
-                      onChange={(e) => handleChordChange(i, e.target.value)}
-                      placeholder="例: Cmaj7"
-                      className="border border-gray-200 p-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition shadow-sm"
-                    />
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <button 
-              onClick={generateEtude}
-              className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 rounded-xl shadow-sm transition active:scale-[0.98]"
-            >
-              <RefreshIcon />
-              エチュードを生成
-            </button>
-          </div>
-
-          <div className="w-full bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col print:shadow-none print:border-none print:rounded-none">
-            <div className="bg-gray-50 border-b border-gray-100 px-4 py-3 flex justify-between items-center print:hidden">
-              <div className="flex items-center gap-3">
-                <span className="text-sm font-semibold text-gray-700">生成された五線譜</span>
-                <span className="text-xs text-gray-500 px-2 py-1 bg-gray-200 rounded-md">Bebop Style</span>
-              </div>
-              {abcString && (
-                <button 
-                  onClick={() => window.print()}
-                  className="text-xs flex items-center gap-1.5 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 px-3 py-1.5 rounded-lg shadow-sm transition"
-                  title="この楽譜をPDFで保存・印刷します"
-                >
-                  <PrintIcon />
-                  PDFで保存
-                </button>
-              )}
-            </div>
-            
-            <div className={abcString ? "bg-white border-b border-gray-100 px-4 py-3 flex flex-col items-center gap-2 w-full print:hidden" : "hidden print:hidden"}>
-              <div className="w-full max-w-3xl flex justify-start pl-2">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input 
-                    type="checkbox" 
-                    checked={isBackingOnly}
-                    onChange={(e) => setIsBackingOnly(e.target.checked)}
-                    className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
-                  />
-                  <span className="text-sm font-medium text-gray-700">伴奏のみ再生（練習モード）</span>
-                </label>
-              </div>
-              <div ref={audioRef} className="w-full max-w-3xl"></div>
-            </div>
-            
-            <div className="p-2 md:p-4 flex-1 print:p-0 print:w-full flex justify-center w-full">
-              {abcString ? (
-                <div className="w-full max-w-[850px] overflow-hidden">
-                  <div id="paper" className="w-full print:w-full"></div>
-                  <div id="audio-paper" style={{ position: 'absolute', top: '-9999px', visibility: 'hidden' }}></div>
-                </div>
-              ) : (
-                <div className="h-full flex items-center justify-center text-gray-400 flex-col gap-3 min-h-[300px] print:hidden">
-                  <MusicIcon />
-                  <p>「エチュードを生成」ボタンを押してください</p>
-                </div>
-              )}
-            </div>
-          </div>
-
-        </div>
-      </div>
-
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[85vh] overflow-hidden flex flex-col animate-[fadeIn_0.2s_ease-out]">
-            <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
-              <h2 className="font-bold text-gray-800 flex items-center gap-2">
-                <MusicIcon />
-                スタンダード曲を選択
-              </h2>
-              <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-600 transition bg-white p-1 rounded-full border border-gray-200">
-                <CloseIcon />
-              </button>
-            </div>
-            <div className="p-4 overflow-y-auto custom-scrollbar flex-1 space-y-2">
-              {standardSongs.map((song, idx) => (
-                <button 
-                  key={idx}
-                  onClick={() => selectStandardSong(song)}
-                  className="w-full text-left px-4 py-3 rounded-xl hover:bg-blue-50 border border-transparent hover:border-blue-100 transition flex justify-between items-center group bg-white shadow-sm"
-                >
-                  <span className="font-medium text-gray-700 group-hover:text-blue-700 transition">{song.title}</span>
-                  <span className="text-xs text-gray-500 bg-gray-100 group-hover:bg-white group-hover:text-blue-500 px-2 py-1 rounded-md transition border border-gray-200 group-hover:border-blue-200">
-                    {song.measures} 小節
-                  </span>
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      <style dangerouslySetInnerHTML={{__html: `
-        @keyframes fadeIn {
-          from { opacity: 0; transform: scale(0.95); }
-          to { opacity: 1; transform: scale(1); }
+            return body;
         }
-      `}} />
-    </div>
-  );
-}
+
+        const App = () => {
+            const [feel, setFeel] = useState('straight');
+            const [difficulty, setDifficulty] = useState('basic');
+            const [isTradeMode, setIsTradeMode] = useState(false);
+            const [skeleton, setSkeleton] = useState(null);
+            const [abcString, setAbcString] = useState("");
+            const [visualObj, setVisualObj] = useState(null);
+            const scoreRef = useRef(null);
+            const audioContainerRef = useRef(null);
+
+            const unlockAudio = async () => {
+                const context = ABCJS.synth.activeAudioContext();
+                if (context && context.state === 'suspended') await context.resume();
+            };
+
+            useEffect(() => { 
+                generateNewSkeleton(); 
+                if (difficulty === 'extreme' || difficulty === 'advanced_elvin') {
+                    setDifficulty(feel === 'straight' ? 'extreme' : 'advanced_elvin');
+                }
+            }, [feel]);
+
+            const generateNewSkeleton = () => {
+                unlockAudio();
+                const accentKeys = Object.keys(MOTIF_LIBRARY[feel]).filter(k => k.startsWith('acc'));
+                let newSkeleton = [], prevWasRest = false;
+                for (let bar = 0; bar < 4; bar++) {
+                    let barSkeleton = [];
+                    for (let beat = 0; beat < 4; beat++) {
+                        let key = (prevWasRest || Math.random() >= 0.3) ? accentKeys[Math.floor(Math.random() * accentKeys.length)] : 'rest';
+                        prevWasRest = (key === 'rest');
+                        let isCrash = (beat === 0 && key !== 'rest' && Math.random() < (bar === 0 ? 0.8 : 0.4));
+                        barSkeleton.push({ key, isCrash, variationIndex: Math.floor(Math.random() * 100) });
+                    }
+                    newSkeleton.push(barSkeleton);
+                }
+                setSkeleton(newSkeleton);
+            };
+
+            useEffect(() => {
+                if (skeleton) {
+                    const body = skeletonToAbc(skeleton, difficulty, feel, isTradeMode);
+                    setAbcString(`X:1\nT:D.R.O.P. Solo Etude\nM:4/4\nL:1/8\nQ:1/4=90\nK:perc\n%%MIDI channel 10\n%%MIDI drummap f 49\n%%MIDI drummap e 45\n%%MIDI drummap c 38\n%%MIDI drummap A 43\n%%MIDI drummap F 36\n%%articulation u\n%%stretchlast 1\n%%stafflines 5\n` + body);
+                }
+            }, [skeleton, difficulty, feel, isTradeMode]);
+
+            useEffect(() => {
+                if (abcString && scoreRef.current) {
+                    const rendered = ABCJS.renderAbc(scoreRef.current, abcString, { responsive: 'resize', add_classes: true, staffwidth: 900, scale: 1.3 });
+                    setVisualObj(rendered[0]);
+                }
+            }, [abcString]);
+
+            useEffect(() => {
+                if (visualObj && audioContainerRef.current) {
+                    audioContainerRef.current.innerHTML = "";
+                    const controller = new ABCJS.synth.SynthController();
+                    controller.load(audioContainerRef.current, null, { displayLoop: true, displayRestart: true, displayPlay: true, displayProgress: true, displayWarp: true });
+                    new ABCJS.synth.CreateSynth().init({ visualObj: visualObj }).then(() => controller.setTune(visualObj, false, { chordsOff: true, midiChannel: 10 }));
+                }
+            }, [visualObj]);
+
+            return (
+                <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-lg p-3 md:p-6 mt-2 md:mt-4 printable-area">
+                    <div className="flex justify-between items-center mb-4 md:mb-6">
+                        <h1 className="text-xl md:text-3xl font-bold text-zinc-800">D.R.O.P. Solo Etude</h1>
+                        <button onClick={() => window.print()} className="no-print bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-1.5 px-3 rounded-md shadow-sm transition-colors text-xs md:text-sm">📄 PDF保存 / 印刷</button>
+                    </div>
+                    <div className="no-print flex flex-col gap-4 mb-6 bg-zinc-50 p-4 rounded-lg border border-zinc-200">
+                        <div className="flex flex-wrap justify-center gap-3">
+                            <div className="flex bg-white rounded-md border border-zinc-300 overflow-hidden shadow-sm">
+                                <button onClick={() => { unlockAudio(); setFeel('straight'); }} className={`px-4 py-2 text-sm font-medium transition-colors ${feel === 'straight' ? 'bg-indigo-600 text-white' : 'hover:bg-zinc-100 text-zinc-700'}`}>Straight</button>
+                                <button onClick={() => { unlockAudio(); setFeel('swing'); }} className={`px-4 py-2 text-sm font-medium transition-colors ${feel === 'swing' ? 'bg-indigo-600 text-white' : 'hover:bg-zinc-100 text-zinc-700'}`}>Swing</button>
+                            </div>
+                            <div className="flex bg-white rounded-md border border-zinc-300 overflow-hidden shadow-sm">
+                                <button onClick={() => { unlockAudio(); setDifficulty('basic'); }} className={`px-3 md:px-4 py-2 text-xs md:text-sm font-medium transition-colors ${difficulty === 'basic' ? 'bg-indigo-600 text-white' : 'hover:bg-zinc-100 text-zinc-700'}`}>1. Basic</button>
+                                <button onClick={() => { unlockAudio(); setDifficulty('advanced'); }} className={`px-3 md:px-4 py-2 text-xs md:text-sm font-medium transition-colors ${difficulty === 'advanced' ? 'bg-indigo-600 text-white' : 'hover:bg-zinc-100 text-zinc-700'}`}>2. Orchestration</button>
+                                <button onClick={() => { unlockAudio(); setDifficulty(feel === 'straight' ? 'extreme' : 'advanced_elvin'); }} className={`px-3 md:px-4 py-2 text-xs md:text-sm font-medium transition-colors ${difficulty === (feel === 'straight' ? 'extreme' : 'advanced_elvin') ? 'bg-indigo-600 text-white' : 'hover:bg-zinc-100 text-zinc-700'}`}>
+                                    {feel === 'straight' ? '3. Extreme' : '3. Advanced'}
+                                </button>
+                            </div>
+                        </div>
+                        <div className="flex flex-wrap justify-center gap-3 items-center">
+                            <label className="flex items-center space-x-2 cursor-pointer bg-white px-4 py-2 rounded-md border border-zinc-300 shadow-sm hover:bg-zinc-50 transition-colors">
+                                <input type="checkbox" checked={isTradeMode} onChange={(e) => setIsTradeMode(e.target.checked)} className="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500" />
+                                <span className="text-xs md:text-sm font-medium text-zinc-700">🎧 4-Bar Trade</span>
+                            </label>
+                            <button onClick={generateNewSkeleton} className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded-md shadow-sm transition-colors text-sm">🔄 New Phrasing</button>
+                        </div>
+                    </div>
+                    <div className="bg-white border-2 border-zinc-100 rounded-lg p-2 md:p-4 overflow-x-auto min-h-[150px]"><div id="score-container" ref={scoreRef}></div></div>
+                    <div className="no-print mt-4 bg-slate-200 border border-slate-300 rounded-lg p-2 w-full max-w-2xl mx-auto shadow-inner"><div ref={audioContainerRef} className="w-full"></div></div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
