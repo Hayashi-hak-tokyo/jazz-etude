@@ -316,9 +316,6 @@
       useEffect(() => {
         if (abcjsLoaded && abcString && window.ABCJS) {
           
-          const isMobile = window.innerWidth < 600;
-
-          // 自動折り返し（wrap）を外し、強制的に1段4小節で描画したものをリサイズさせます
           window.ABCJS.renderAbc("paper", abcString, {
             responsive: "resize",
             add_classes: true,
@@ -556,25 +553,24 @@
       };
 
       const generateEtude = () => {
+        // ★表示用ヘッダーからはBPM指定(Q:)を消して見た目をスッキリさせます
         let headerDisplay = "X: 1\n";
         headerDisplay += "T: Jazz Solo Etude\n";
         headerDisplay += "M: 4/4\n";
         headerDisplay += "L: 1/8\n";
-        // 表示用のヘッダーからは Q: (BPM) を削除して楽譜に表示させない
         headerDisplay += "K: C\n"; 
         headerDisplay += "%%staffwidth 800\n"; 
-        headerDisplay += "%%stretchlast 1\n"; 
 
         let isModalTune = playStyle === "modal";
         let bassProgram = isModalTune ? 39 : 32;
 
+        // ★再生用ヘッダーにはBPM指定(Q:)を残し、プレイヤーに読み取らせます
         let headerAudio = "X: 1\n";
         headerAudio += "T: Jazz Solo Etude\n";
         headerAudio += "M: 4/4\n";
         headerAudio += "L: 1/8\n";
-        headerAudio += "Q: 1/4=120\n"; // 再生用にはBPM120を残す
+        headerAudio += "Q: 1/4=120\n"; 
         headerAudio += "K: C\n"; 
-        headerAudio += "%%stretchlast 1\n";
         headerAudio += "%%staves (1 2 3)\n";
         headerAudio += "V: 1 clef=treble\n";
         headerAudio += "%%MIDI program 0\n"; 
@@ -586,13 +582,13 @@
         headerAudio += "%%MIDI program " + bassProgram + "\n"; 
         headerAudio += "%%MIDI control 7 100\n"; 
 
+        // ★伴奏のみ用ヘッダーにも同様にBPM指定を残します
         let headerBacking = "X: 1\n";
         headerBacking += "T: Jazz Solo Etude (Backing Track)\n";
         headerBacking += "M: 4/4\n";
         headerBacking += "L: 1/8\n";
         headerBacking += "Q: 1/4=120\n"; 
         headerBacking += "K: C\n"; 
-        headerBacking += "%%stretchlast 1\n";
         headerBacking += "%%staves (1 2 3)\n";
         headerBacking += "V: 1 clef=treble\n";
         headerBacking += "%%MIDI program 0\n"; 
@@ -752,7 +748,6 @@
                 let isDominant = typeStr.includes('7') && !isMajor && !typeStr.includes('m') && !typeStr.includes('dim');
                 let isMinor = typeStr.includes('m') && !typeStr.includes('maj');
 
-                // コードチェンジ時（または最初）にスケールを再計算する
                 if (isChordChange || index === 1) {
                     isOut = false;
                     outCounter = 0;
@@ -765,21 +760,20 @@
                     if (isMajor) {
                         intervals = Math.random() < 0.5 ? [0, 2, 4, 7, 9] : [0, 2, 4, 6, 7, 9, 11];
                     } else if (isDominant) {
-                        // ドミナント7th用の豊富なスケール群
                         const domScales = [
-                            [0, 2, 4, 5, 7, 9, 10], // Mixolydian
-                            [0, 1, 3, 4, 5, 7, 10], // Mixolydian b9 #9
-                            [0, 2, 4, 5, 7, 8, 10], // Mixolydian b13
-                            [0, 1, 3, 4, 5, 7, 8, 10], // Mixolydian b9 #9 b13 (Hmp5↓)
-                            [0, 2, 4, 6, 7, 9, 10], // Lydian b7
-                            [0, 1, 3, 4, 6, 8, 10], // Altered
-                            [0, 1, 3, 4, 6, 7, 9, 10], // Con Dim
-                            [0, 2, 4, 6, 8, 10], // Whole Tone
-                            [0, 2, 3, 6, 7, 9, 10] // Lydian Minor
+                            [0, 2, 4, 5, 7, 9, 10], 
+                            [0, 1, 3, 4, 5, 7, 10], 
+                            [0, 2, 4, 5, 7, 8, 10], 
+                            [0, 1, 3, 4, 5, 7, 8, 10], 
+                            [0, 2, 4, 6, 7, 9, 10], 
+                            [0, 1, 3, 4, 6, 8, 10], 
+                            [0, 1, 3, 4, 6, 7, 9, 10], 
+                            [0, 2, 4, 6, 8, 10], 
+                            [0, 2, 3, 6, 7, 9, 10] 
                         ];
                         let r = Math.floor(Math.random() * domScales.length);
                         intervals = domScales[r];
-                        if (r === 5) currentScaleIsAltered = true; // オルタード判定
+                        if (r === 5) currentScaleIsAltered = true; 
                     } else {
                         intervals = Math.random() < 0.5 ? [0, 3, 5, 7, 10] : [0, 2, 3, 5, 7, 9, 10];
                     }
@@ -825,7 +819,6 @@
                     continue;
                 }
 
-                // ★オルタードスケールの解決アプローチ★
                 let nextChordIdx = index + 1;
                 let isLastNoteOfChord = (nextChordIdx < totalSlots) && (flatChords[index].chord !== flatChords[nextChordIdx].chord);
 
@@ -848,7 +841,6 @@
                         }
                     }
                     
-                    // ターゲット音に対して半音上か下から解決する
                     notes[index] = closestTarget + (Math.random() < 0.5 ? 1 : -1);
                     continue; 
                 }
@@ -1323,29 +1315,28 @@
           fullAccompaniment += abcMeasureV2;
           fullBass += abcMeasureV3;
 
-          // どんな画面幅でも必ず4小節ごとに改行を入れる
           const measuresPerLine = 4;
 
-          // 確実に改行させるためにスペースを入れてから改行コードを追加
           if ((i + 1) % measuresPerLine === 0 || i === measureCount - 1) {
-              fullMelody += " \n";
-              fullAccompaniment += " \n";
-              fullBass += " \n";
+              fullMelody += "\n";
+              fullAccompaniment += "\n";
+              fullBass += "\n";
           }
         }
 
         setAbcString(headerDisplay + fullMelody);
         
+        // ★インラインで全てのV:(ボイス)の直後にQ:(BPM)を追加し、ABCJSに強制認識させます
         let finalAudioAbc = headerAudio;
-        finalAudioAbc += "[V: 1]\n" + fullMelody;
-        finalAudioAbc += "[V: 2]\n" + fullAccompaniment;
-        finalAudioAbc += "[V: 3]\n" + fullBass;
+        finalAudioAbc += "[V: 1]\n[Q: 1/4=120]\n" + fullMelody;
+        finalAudioAbc += "[V: 2]\n[Q: 1/4=120]\n" + fullAccompaniment;
+        finalAudioAbc += "[V: 3]\n[Q: 1/4=120]\n" + fullBass;
         setAudioAbcString(finalAudioAbc);
 
         let finalBackingAbc = headerBacking;
-        finalBackingAbc += "[V: 1]\n" + fullMelody;
-        finalBackingAbc += "[V: 2]\n" + fullAccompaniment;
-        finalBackingAbc += "[V: 3]\n" + fullBass;
+        finalBackingAbc += "[V: 1]\n[Q: 1/4=120]\n" + fullMelody;
+        finalBackingAbc += "[V: 2]\n[Q: 1/4=120]\n" + fullAccompaniment;
+        finalBackingAbc += "[V: 3]\n[Q: 1/4=120]\n" + fullBass;
         setBackingAbcString(finalBackingAbc);
       };
 
