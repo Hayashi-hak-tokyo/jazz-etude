@@ -12,7 +12,6 @@
   
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   
-  <!-- ABCJSの必須CSSとJS -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/abcjs/6.2.2/abcjs-audio.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/abcjs/6.2.2/abcjs-basic-min.js"></script>
 
@@ -27,7 +26,6 @@
     .abcjs-note { fill: #1f2937; }
     .abcjs-staff { fill: #1f2937; }
     
-    /* 再生中の音符を青色でハイライト */
     .abcjs-highlight { fill: #2563eb !important; } 
     
     #paper { padding-bottom: 20px; }
@@ -70,7 +68,6 @@
   <script type="text/babel">
     const { useState, useEffect, useRef } = React;
 
-    // --- インラインSVGアイコン ---
     const MusicIcon = () => (
       <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M9 18V5l12-2v13"></path>
@@ -284,7 +281,7 @@
       const [measureCount, setMeasureCount] = useState(8);
       const [chords, setChords] = useState(Array(64).fill(""));
       const [currentSongTitle, setCurrentSongTitle] = useState("");
-      const [playStyle, setPlayStyle] = useState("bebop"); // "bebop" or "modal"
+      const [playStyle, setPlayStyle] = useState("bebop"); 
       
       const [abcString, setAbcString] = useState("");
       const [audioAbcString, setAudioAbcString] = useState("");
@@ -316,22 +313,20 @@
         document.body.appendChild(script);
       }, []);
 
-      // 楽譜とプレイヤーの描画・初期化
       useEffect(() => {
         if (abcjsLoaded && abcString && window.ABCJS) {
           
-          // 幅600px未満をスマホ(縮小表示用)と判定する
           const isMobile = window.innerWidth < 600;
 
-          // どんな画面幅でも基準幅(800px)で描画し、それを枠に合わせて自動縮小させる
+          // 自動折り返し（wrap）を外し、強制的に1段4小節で描画したものをリサイズさせます
           window.ABCJS.renderAbc("paper", abcString, {
             responsive: "resize",
             add_classes: true,
             paddingtop: 10,
             paddingbottom: 30,
-            paddingleft: 10,
-            paddingright: 10,
-            staffwidth: isMobile ? undefined : 800,
+            paddingleft: 0,
+            paddingright: 0,
+            staffwidth: 800
           });
 
           const currentAudioString = isBackingOnly ? backingAbcString : audioAbcString;
@@ -454,7 +449,6 @@
         setChords(newChords);
         setCurrentSongTitle(song.title); 
         
-        // Impressions か So What の場合は自動で Modal スタイルに切り替える
         if (song.title === "Impressions" || song.title === "So What") {
             setPlayStyle("modal");
         } else {
@@ -566,15 +560,21 @@
         headerDisplay += "T: Jazz Solo Etude\n";
         headerDisplay += "M: 4/4\n";
         headerDisplay += "L: 1/8\n";
-        headerDisplay += "Q: 1/4=140\n"; 
+        // 表示用のヘッダーからは Q: (BPM) を削除して楽譜に表示させない
         headerDisplay += "K: C\n"; 
+        headerDisplay += "%%staffwidth 800\n"; 
+        headerDisplay += "%%stretchlast 1\n"; 
+
+        let isModalTune = playStyle === "modal";
+        let bassProgram = isModalTune ? 39 : 32;
 
         let headerAudio = "X: 1\n";
         headerAudio += "T: Jazz Solo Etude\n";
         headerAudio += "M: 4/4\n";
         headerAudio += "L: 1/8\n";
-        headerAudio += "Q: 1/4=140\n"; 
+        headerAudio += "Q: 1/4=120\n"; // 再生用にはBPM120を残す
         headerAudio += "K: C\n"; 
+        headerAudio += "%%stretchlast 1\n";
         headerAudio += "%%staves (1 2 3)\n";
         headerAudio += "V: 1 clef=treble\n";
         headerAudio += "%%MIDI program 0\n"; 
@@ -583,15 +583,16 @@
         headerAudio += "%%MIDI program 4\n"; 
         headerAudio += "%%MIDI control 7 60\n"; 
         headerAudio += "V: 3 clef=bass\n";
-        headerAudio += "%%MIDI program 39\n"; 
+        headerAudio += "%%MIDI program " + bassProgram + "\n"; 
         headerAudio += "%%MIDI control 7 100\n"; 
 
         let headerBacking = "X: 1\n";
         headerBacking += "T: Jazz Solo Etude (Backing Track)\n";
         headerBacking += "M: 4/4\n";
         headerBacking += "L: 1/8\n";
-        headerBacking += "Q: 1/4=140\n"; 
+        headerBacking += "Q: 1/4=120\n"; 
         headerBacking += "K: C\n"; 
+        headerBacking += "%%stretchlast 1\n";
         headerBacking += "%%staves (1 2 3)\n";
         headerBacking += "V: 1 clef=treble\n";
         headerBacking += "%%MIDI program 0\n"; 
@@ -600,7 +601,7 @@
         headerBacking += "%%MIDI program 4\n"; 
         headerBacking += "%%MIDI control 7 60\n";
         headerBacking += "V: 3 clef=bass\n";
-        headerBacking += "%%MIDI program 39\n"; 
+        headerBacking += "%%MIDI program " + bassProgram + "\n"; 
         headerBacking += "%%MIDI control 7 100\n";
 
         const getAbcNote = (midi, measureAccidentalsRef, currentChord) => {
@@ -667,12 +668,18 @@
           return "[" + abcNotes.join("") + "]";
         };
 
+        const clampBass = (m) => {
+            while(m < 28) m += 12; 
+            while(m > 48) m -= 12; 
+            return m;
+        };
+
         const getAbcBassBeat = (chordStr, measureAccidentalsRef) => {
           const match = chordStr.match(/^[A-G][#b]?/);
           if (!match) return "z";
           let root = match[0];
           let rootMidi = 36 + getMidiOffset(root); 
-          return getAbcNote(rootMidi, measureAccidentalsRef, chordStr);
+          return getAbcNote(clampBass(rootMidi), measureAccidentalsRef, chordStr);
         };
 
         let flatChords = [];
@@ -705,31 +712,30 @@
         let firstChord = flatChords[0].chord;
         let firstTones = flatChords[0].tones;
         notes[0] = firstTones[0] + 12; 
-
-        let isImpressions = currentSongTitle === "Impressions";
+        
         let isOut = false;
         let outCounter = 0;
         let usePenta = true;
-        
-        // 曲名だけでなく、トグルボタンの状態でモード奏法かどうかを判定する
-        let isModalTune = playStyle === "modal";
         
         let currentLick = null;
         let lickIndex = 0;
         let lickOctave = 0;
         const modalLicks = [
-            [7, 5, 3, 2, 0], // Miles Davis風: ドリアン下降
-            [0, 2, 3, 5, 7], // Miles Davis風: ドリアン上昇
-            [12, 10, 7, 5, 3, 0], // Miles Davis風: 幅広いドリアン下降
-            [0, 2, 3, 7],    // John Coltrane風: 1-2-b3-5
-            [7, 3, 2, 0],    // John Coltrane風: 5-b3-2-1 下降
-            [0, 5, 10, 15],  // McCoy/Coltrane風: 4度堆積
-            [10, 7, 5, 3, 0], // ペンタトニック下降
-            [3, 7, 10, 14],  // Bill Evans風: マイナー7th(9)の美しいアルペジオ上昇
-            [14, 10, 7, 3],  // Bill Evans風: 9thからの知的なアルペジオ下降
-            [7, 6, 5, 3, 0], // Bill Evans風: ブルーノート(b5)を経由するブルージーな下降
-            [2, 3, 5, 7, 9, 10] // Bill Evans風: 13thを含む滑らかなドリアン上昇
+            [7, 5, 3, 2, 0], 
+            [0, 2, 3, 5, 7], 
+            [12, 10, 7, 5, 3, 0], 
+            [0, 2, 3, 7],    
+            [7, 3, 2, 0],    
+            [0, 5, 10, 15],  
+            [10, 7, 5, 3, 0], 
+            [3, 7, 10, 14],  
+            [14, 10, 7, 3],  
+            [7, 6, 5, 3, 0], 
+            [2, 3, 5, 7, 9, 10] 
         ];
+
+        let currentScaleTones = [];
+        let currentScaleIsAltered = false;
         
         for (let index = 1; index < totalSlots; index++) {
             let prevTarget = notes[index - 1];
@@ -739,21 +745,52 @@
             let chordTones = flatChords[index].tones;
             
             if (isModalTune) {
-                let isChordChange = index > 0 && currentChord !== flatChords[index-1].chord;
-                
+                let isChordChange = currentChord !== flatChords[index-1].chord;
                 let rootStr = currentChord.match(/^[A-G][#b]?/)[0];
                 let typeStr = currentChord.substring(rootStr.length);
                 let isMajor = typeStr.includes('maj') || typeStr.includes('M7') || typeStr.includes('△') || typeStr === '' || typeStr === '6';
                 let isDominant = typeStr.includes('7') && !isMajor && !typeStr.includes('m') && !typeStr.includes('dim');
                 let isMinor = typeStr.includes('m') && !typeStr.includes('maj');
 
-                if (isChordChange) {
+                // コードチェンジ時（または最初）にスケールを再計算する
+                if (isChordChange || index === 1) {
                     isOut = false;
                     outCounter = 0;
                     currentLick = null;
+                    currentScaleIsAltered = false;
+
+                    let rootMidi = 60 + getMidiOffset(rootStr);
+                    let intervals;
+
+                    if (isMajor) {
+                        intervals = Math.random() < 0.5 ? [0, 2, 4, 7, 9] : [0, 2, 4, 6, 7, 9, 11];
+                    } else if (isDominant) {
+                        // ドミナント7th用の豊富なスケール群
+                        const domScales = [
+                            [0, 2, 4, 5, 7, 9, 10], // Mixolydian
+                            [0, 1, 3, 4, 5, 7, 10], // Mixolydian b9 #9
+                            [0, 2, 4, 5, 7, 8, 10], // Mixolydian b13
+                            [0, 1, 3, 4, 5, 7, 8, 10], // Mixolydian b9 #9 b13 (Hmp5↓)
+                            [0, 2, 4, 6, 7, 9, 10], // Lydian b7
+                            [0, 1, 3, 4, 6, 8, 10], // Altered
+                            [0, 1, 3, 4, 6, 7, 9, 10], // Con Dim
+                            [0, 2, 4, 6, 8, 10], // Whole Tone
+                            [0, 2, 3, 6, 7, 9, 10] // Lydian Minor
+                        ];
+                        let r = Math.floor(Math.random() * domScales.length);
+                        intervals = domScales[r];
+                        if (r === 5) currentScaleIsAltered = true; // オルタード判定
+                    } else {
+                        intervals = Math.random() < 0.5 ? [0, 3, 5, 7, 10] : [0, 2, 3, 5, 7, 9, 10];
+                    }
+
+                    currentScaleTones = [];
+                    for(let oct = -2; oct <= 2; oct++){
+                        intervals.forEach(i => currentScaleTones.push(rootMidi + i + oct * 12));
+                    }
+                    currentScaleTones = currentScaleTones.filter(n => n >= 55 && n <= 84).sort((a,b)=>a-b);
                 }
 
-                // リック（引用フレーズ）はDorianベースのため、マイナーコードの時のみ発動させる
                 if (currentLick === null && !isOut && Math.random() < 0.05) {
                     if (isMinor) {
                         currentLick = modalLicks[Math.floor(Math.random() * modalLicks.length)];
@@ -788,6 +825,34 @@
                     continue;
                 }
 
+                // ★オルタードスケールの解決アプローチ★
+                let nextChordIdx = index + 1;
+                let isLastNoteOfChord = (nextChordIdx < totalSlots) && (flatChords[index].chord !== flatChords[nextChordIdx].chord);
+
+                if (currentScaleIsAltered && isLastNoteOfChord) {
+                    let nextChordStr = flatChords[nextChordIdx].chord;
+                    let nextRoot = 60 + getMidiOffset(nextChordStr.match(/^[A-G][#b]?/)[0]);
+                    let nextType = nextChordStr.substring(nextChordStr.match(/^[A-G][#b]?/)[0].length);
+                    let nextThird = nextRoot + (nextType.includes('m') && !nextType.includes('maj') ? 3 : 4);
+                    
+                    let targets = [nextRoot, nextThird];
+                    let bestTarget = targets[Math.random() < 0.5 ? 0 : 1];
+                    
+                    let closestTarget = bestTarget;
+                    let minDist = 999;
+                    for (let oct = -2; oct <= 2; oct++) {
+                        let t = bestTarget + oct * 12;
+                        if (t >= 55 && t <= 84 && Math.abs(t - prevTarget) < minDist) {
+                            minDist = Math.abs(t - prevTarget);
+                            closestTarget = t;
+                        }
+                    }
+                    
+                    // ターゲット音に対して半音上か下から解決する
+                    notes[index] = closestTarget + (Math.random() < 0.5 ? 1 : -1);
+                    continue; 
+                }
+
                 if (!isOut && outCounter === 0 && Math.random() < 0.08) {
                     isOut = true;
                     outCounter = 4 + Math.floor(Math.random() * 6); 
@@ -797,31 +862,10 @@
                     if (outCounter <= 0) isOut = false;
                 }
                 
-                if (index % 8 === 0) {
-                    usePenta = Math.random() < 0.7; 
+                let scaleTones = [...currentScaleTones];
+                if (isOut) {
+                    scaleTones = scaleTones.map(n => n + 1); 
                 }
-
-                let rootMidi = 60 + getMidiOffset(rootStr);
-                if (isOut) rootMidi += 1; 
-
-                // コードの性質に合わせてスケールを使い分ける
-                let intervals;
-                if (isMajor) {
-                    // メジャーコード: リディアンスケール または メジャーペンタトニック
-                    intervals = usePenta ? [0, 2, 4, 7, 9] : [0, 2, 4, 6, 7, 9, 11];
-                } else if (isDominant) {
-                    // ドミナントコード: ミクソリディアンスケール または メジャーペンタトニック
-                    intervals = usePenta ? [0, 2, 4, 7, 9] : [0, 2, 4, 5, 7, 9, 10];
-                } else {
-                    // マイナーコード: ドリアンスケール または マイナーペンタトニック
-                    intervals = usePenta ? [0, 3, 5, 7, 10] : [0, 2, 3, 5, 7, 9, 10];
-                }
-
-                let scaleTones = [];
-                for(let oct = -2; oct <= 2; oct++){
-                    intervals.forEach(i => scaleTones.push(rootMidi + i + oct * 12));
-                }
-                scaleTones = scaleTones.filter(n => n >= 55 && n <= 84).sort((a,b)=>a-b);
 
                 let target = prevTarget;
                 let minDist = 9999;
@@ -1041,26 +1085,98 @@
           let dynamicsV2 = (i === 0) ? "!mp! " : "";
           let dynamicsV3 = (i === 0) ? "!mf! " : "";
 
-          if (i === measureCount - 1) {
-              abcMeasureV2 += dynamicsV2 + getAbcChord(chordsInMeasure[0], measureAccidentalsV2) + "8 |]";
-              let b1 = getAbcBassBeat(chordsInMeasure[0], measureAccidentalsV3);
-              abcMeasureV3 += dynamicsV3 + b1 + "8 |]";
-          } else {
-              if (chordsInMeasure.length === 1) {
-                  abcMeasureV2 += dynamicsV2 + getAbcChord(chordsInMeasure[0], measureAccidentalsV2) + "8";
+          if (isModalTune) {
+              if (i === measureCount - 1) {
+                  abcMeasureV2 += dynamicsV2 + getAbcChord(chordsInMeasure[0], measureAccidentalsV2) + "8 |]";
                   let b1 = getAbcBassBeat(chordsInMeasure[0], measureAccidentalsV3);
-                  abcMeasureV3 += dynamicsV3 + b1 + "8";
+                  abcMeasureV3 += dynamicsV3 + b1 + "8 |]";
               } else {
-                  let c1 = getAbcChord(chordsInMeasure[0], measureAccidentalsV2);
-                  let c2 = getAbcChord(chordsInMeasure[1], measureAccidentalsV2);
-                  abcMeasureV2 += dynamicsV2 + c1 + "4 " + c2 + "4";
-                  
-                  let b1 = getAbcBassBeat(chordsInMeasure[0], measureAccidentalsV3);
-                  let b2 = getAbcBassBeat(chordsInMeasure[1], measureAccidentalsV3);
-                  abcMeasureV3 += dynamicsV3 + b1 + "4 " + b2 + "4";
+                  if (chordsInMeasure.length === 1) {
+                      abcMeasureV2 += dynamicsV2 + getAbcChord(chordsInMeasure[0], measureAccidentalsV2) + "8";
+                      let b1 = getAbcBassBeat(chordsInMeasure[0], measureAccidentalsV3);
+                      abcMeasureV3 += dynamicsV3 + b1 + "8";
+                  } else {
+                      let c1 = getAbcChord(chordsInMeasure[0], measureAccidentalsV2);
+                      let c2 = getAbcChord(chordsInMeasure[1], measureAccidentalsV2);
+                      abcMeasureV2 += dynamicsV2 + c1 + "4 " + c2 + "4";
+                      let b1 = getAbcBassBeat(chordsInMeasure[0], measureAccidentalsV3);
+                      let b2 = getAbcBassBeat(chordsInMeasure[1], measureAccidentalsV3);
+                      abcMeasureV3 += dynamicsV3 + b1 + "4 " + b2 + "4";
+                  }
+                  abcMeasureV2 += " | ";
+                  abcMeasureV3 += " | ";
               }
-              abcMeasureV2 += " | ";
-              abcMeasureV3 += " | ";
+          } else {
+              let nextMeasureFirstChord = (i < measureCount - 1) ? ((chords[i+1] || "Cmaj7").split(/\s+/).filter(c => c.length > 0)[0] || "Cmaj7") : chordsInMeasure[0];
+              
+              if (i === measureCount - 1) {
+                  abcMeasureV2 += dynamicsV2 + getAbcChord(chordsInMeasure[0], measureAccidentalsV2) + "8 |]";
+                  let r = 36 + getMidiOffset(chordsInMeasure[0].match(/^[A-G][#b]?/)[0]);
+                  abcMeasureV3 += dynamicsV3 + getAbcNote(clampBass(r), measureAccidentalsV3, chordsInMeasure[0]) + "8 |]";
+              } else {
+                  if (chordsInMeasure.length === 1) {
+                      let chord = chordsInMeasure[0];
+                      let rootMidi = 36 + getMidiOffset(chord.match(/^[A-G][#b]?/)[0]);
+                      let thirdMidi = rootMidi + (chord.includes('m') && !chord.includes('maj') ? 3 : 4);
+                      let fifthMidi = rootMidi + (chord.includes('m7b5') || chord.includes('dim') ? 6 : 7);
+                      let nextRootMidi = 36 + getMidiOffset(nextMeasureFirstChord.match(/^[A-G][#b]?/)[0]);
+                      
+                      let b1 = rootMidi;
+                      let b2, b3, b4;
+                      
+                      let isPC = Math.random() < 0.30;
+                      if (isPC) {
+                          b2 = fifthMidi;
+                          b3 = thirdMidi;
+                          b4 = nextRootMidi + (Math.random() < 0.5 ? -1 : 1);
+                      } else {
+                          b2 = (Math.random() < 0.5) ? thirdMidi : rootMidi + 12;
+                          b3 = fifthMidi;
+                          b4 = (Math.random() < 0.5) ? nextRootMidi - 1 : nextRootMidi - 2;
+                          if (Math.random() < 0.3) b4 = nextRootMidi + 1;
+                      }
+                      
+                      abcMeasureV2 += dynamicsV2 + getAbcChord(chord, measureAccidentalsV2) + "8 | ";
+                      abcMeasureV3 += dynamicsV3 
+                          + getAbcNote(clampBass(b1), measureAccidentalsV3, chord) + "2 "
+                          + getAbcNote(clampBass(b2), measureAccidentalsV3, chord) + "2 "
+                          + getAbcNote(clampBass(b3), measureAccidentalsV3, chord) + "2 "
+                          + getAbcNote(clampBass(b4), measureAccidentalsV3, chord) + "2 | ";
+                  } else {
+                      let chord1 = chordsInMeasure[0];
+                      let chord2 = chordsInMeasure[1];
+                      let root1 = 36 + getMidiOffset(chord1.match(/^[A-G][#b]?/)[0]);
+                      let root2 = 36 + getMidiOffset(chord2.match(/^[A-G][#b]?/)[0]);
+                      let fifth1 = root1 + (chord1.includes('m7b5') || chord1.includes('dim') ? 6 : 7);
+                      let fifth2 = root2 + (chord2.includes('m7b5') || chord2.includes('dim') ? 6 : 7);
+                      let nextRootMidi = 36 + getMidiOffset(nextMeasureFirstChord.match(/^[A-G][#b]?/)[0]);
+                      
+                      let b1 = root1;
+                      let b2, b3, b4;
+                      
+                      let isPC = Math.random() < 0.30;
+                      if (isPC) {
+                          b2 = root2 + (Math.random() < 0.5 ? -1 : 1);
+                          b3 = root2;
+                          b4 = nextRootMidi + (Math.random() < 0.5 ? -1 : 1);
+                      } else {
+                          b2 = fifth1;
+                          if (b2 % 12 === root2 % 12) b2 = root1 + 2; 
+                          b3 = root2;
+                          b4 = fifth2;
+                      }
+                      
+                      let c1 = getAbcChord(chord1, measureAccidentalsV2);
+                      let c2 = getAbcChord(chord2, measureAccidentalsV2);
+                      abcMeasureV2 += dynamicsV2 + c1 + "4 " + c2 + "4 | ";
+                      
+                      abcMeasureV3 += dynamicsV3 
+                          + getAbcNote(clampBass(b1), measureAccidentalsV3, chord1) + "2 "
+                          + getAbcNote(clampBass(b2), measureAccidentalsV3, chord1) + "2 "
+                          + getAbcNote(clampBass(b3), measureAccidentalsV3, chord2) + "2 "
+                          + getAbcNote(clampBass(b4), measureAccidentalsV3, chord2) + "2 | ";
+                  }
+              }
           }
 
           if (i === measureCount - 1) {
@@ -1207,9 +1323,10 @@
           fullAccompaniment += abcMeasureV2;
           fullBass += abcMeasureV3;
 
-          const isMobile = window.innerWidth < 600;
-          const measuresPerLine = isMobile ? 2 : 4;
+          // どんな画面幅でも必ず4小節ごとに改行を入れる
+          const measuresPerLine = 4;
 
+          // 確実に改行させるためにスペースを入れてから改行コードを追加
           if ((i + 1) % measuresPerLine === 0 || i === measureCount - 1) {
               fullMelody += " \n";
               fullAccompaniment += " \n";
@@ -1327,7 +1444,6 @@
                   <div className="flex items-center gap-3">
                     <span className="text-sm font-semibold text-gray-700">生成された五線譜</span>
                     
-                    {/* スタイル切り替えボタン */}
                     <button 
                       onClick={() => setPlayStyle(prev => prev === 'bebop' ? 'modal' : 'bebop')}
                       className={`text-[11px] px-2.5 py-1.5 rounded-md transition-all border flex items-center gap-1.5 cursor-pointer shadow-sm ${playStyle === 'modal' ? 'bg-purple-50 hover:bg-purple-100 text-purple-700 border-purple-200' : 'bg-gray-100 hover:bg-gray-200 text-gray-700 border-gray-200'}`}
