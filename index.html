@@ -27,6 +27,8 @@
     .abcjs-staff { fill: #1f2937; }
     
     .abcjs-highlight { fill: #2563eb !important; } 
+
+    .abcjs-tempo { display: none !important; }
     
     #paper { padding-bottom: 20px; }
     #paper svg { 
@@ -100,9 +102,33 @@
       </svg>
     );
 
+    // ★各キーの調号（シャープ・フラット）の定義
+    const keySignatures = {
+      'C': { C:0, D:0, E:0, F:0, G:0, A:0, B:0 },
+      'Am': { C:0, D:0, E:0, F:0, G:0, A:0, B:0 },
+      'G': { C:0, D:0, E:0, F:1, G:0, A:0, B:0 },
+      'Em': { C:0, D:0, E:0, F:1, G:0, A:0, B:0 },
+      'D': { C:1, D:0, E:0, F:1, G:0, A:0, B:0 },
+      'A': { C:1, D:0, E:0, F:1, G:1, A:0, B:0 },
+      'E': { C:1, D:1, E:0, F:1, G:1, A:0, B:0 },
+      'B': { C:1, D:1, E:0, F:1, G:1, A:1, B:0 },
+      'F#': { C:1, D:1, E:1, F:1, G:1, A:1, B:0 },
+      'F': { C:0, D:0, E:0, F:0, G:0, A:0, B:-1 },
+      'Dm': { C:0, D:0, E:0, F:0, G:0, A:0, B:-1 },
+      'Bb': { C:0, D:0, E:-1, F:0, G:0, A:0, B:-1 },
+      'Gm': { C:0, D:0, E:-1, F:0, G:0, A:0, B:-1 },
+      'Eb': { C:0, D:0, E:-1, F:0, G:0, A:-1, B:-1 },
+      'Cm': { C:0, D:0, E:-1, F:0, G:0, A:-1, B:-1 },
+      'Ab': { C:0, D:-1, E:-1, F:0, G:0, A:-1, B:-1 },
+      'Fm': { C:0, D:-1, E:-1, F:0, G:0, A:-1, B:-1 },
+      'Db': { C:0, D:-1, E:-1, F:0, G:-1, A:-1, B:-1 },
+      'Gb': { C:-1, D:-1, E:-1, F:0, G:-1, A:-1, B:-1 }
+    };
+
     const standardSongs = [
       {
         title: "All The Things You Are",
+        key: "Ab",
         measures: 36,
         chords: [
           "Fm7", "Bbm7", "Eb7", "Abmaj7", "Dbmaj7", "G7", "Cmaj7", "Cmaj7",
@@ -114,6 +140,7 @@
       },
       {
         title: "Autumn Leaves",
+        key: "Gm",
         measures: 32,
         chords: [
           "Cm7", "F7", "Bbmaj7", "Ebmaj7", "Am7b5", "D7", "Gm7", "Gm7",
@@ -124,6 +151,7 @@
       },
       {
         title: "Blue Bossa",
+        key: "Cm",
         measures: 16,
         chords: [
           "Cm7", "Cm7", "Fm7", "Fm7", "Dm7b5", "G7", "Cm7", "Cm7",
@@ -132,6 +160,7 @@
       },
       {
         title: "Donna Lee",
+        key: "Ab",
         measures: 32,
         chords: [
           "Abmaj7", "Abmaj7", "F7", "F7", "Bbm7", "Bbm7", "Bb7", "Bb7",
@@ -142,6 +171,7 @@
       },
       {
         title: "Giant Steps",
+        key: "C", // ★ご要望通り、転調が多すぎるため例外的に調号なし（C）に設定
         measures: 16,
         chords: [
           "Bmaj7 D7", "Gmaj7 Bb7", "Ebmaj7", "Am7 D7",
@@ -152,6 +182,7 @@
       },
       {
         title: "I Got Rhythm",
+        key: "Bb",
         measures: 32,
         chords: [
           "Bbmaj7 G7", "Cm7 F7", "Bbmaj7 G7", "Cm7 F7", "Bbmaj7 Bb7", "Ebmaj7 Edim7", "Bbmaj7 F7", "Bbmaj7",
@@ -162,6 +193,7 @@
       },
       {
         title: "I'll Remember April",
+        key: "G",
         measures: 48,
         chords: [
           "Gmaj7", "Gmaj7", "Gm7", "Gm7", "Gmaj7", "Gmaj7", "Gm7", "Gm7",
@@ -174,6 +206,7 @@
       },
       {
         title: "Impressions",
+        key: "C",
         measures: 32,
         chords: [
           "Dm7", "Dm7", "Dm7", "Dm7", "Dm7", "Dm7", "Dm7", "Dm7",
@@ -184,6 +217,7 @@
       },
       {
         title: "Inner Urge",
+        key: "C",
         measures: 24,
         chords: [
           "F#m7b5", "F#m7b5", "F#m7b5", "F#m7b5", "Fmaj7", "Fmaj7", "Fmaj7", "Fmaj7",
@@ -193,6 +227,7 @@
       },
       {
         title: "Moment's Notice",
+        key: "Eb",
         measures: 38,
         chords: [
           "Em7 A7", "Fm7 Bb7", "Ebmaj7", "Abm7 Db7", 
@@ -208,6 +243,7 @@
       },
       {
         title: "So What",
+        key: "C",
         measures: 32,
         chords: [
           "Dm7", "Dm7", "Dm7", "Dm7", "Dm7", "Dm7", "Dm7", "Dm7",
@@ -218,6 +254,7 @@
       },
       {
         title: "Softly, as in a Morning Sunrise",
+        key: "Cm",
         measures: 32,
         chords: [
           "Cm7", "Dm7b5 G7", "Cm7", "Dm7b5 G7", "Cm7", "Dm7b5 G7", "Cm7", "Dm7b5 G7",
@@ -228,6 +265,7 @@
       },
       {
         title: "Stablemates",
+        key: "Db",
         measures: 36,
         chords: [
           "Em7 A7", "Ebmaj7", "Cm7 F7", "Bbmaj7", "Fm7b5 Bb7", "Ebmaj7", "Ebm7 Ab7", "Dbmaj7", "C#m7 F#7", "Bmaj7", "Bm7 E7", "Amaj7", "Am7 D7", "Gmaj7",
@@ -237,6 +275,7 @@
       },
       {
         title: "Stella by Starlight",
+        key: "Bb",
         measures: 32,
         chords: [
           "Em7b5", "A7", "Cm7", "F7", "Fm7", "Bb7", "Ebmaj7", "Ebmaj7",
@@ -247,6 +286,7 @@
       },
       {
         title: "There Will Never Be Another You",
+        key: "Eb",
         measures: 32,
         chords: [
           "Ebmaj7", "Ebmaj7", "Dm7b5", "G7", "Cm7", "Cm7", "Bbm7", "Eb7",
@@ -257,6 +297,7 @@
       },
       {
         title: "What Is This Thing Called Love?",
+        key: "C",
         measures: 32,
         chords: [
           "Gm7b5", "C7", "Fm7", "Fm7", "Dm7b5", "G7", "Cmaj7", "Cmaj7",
@@ -267,6 +308,7 @@
       },
       {
         title: "You'd Be So Nice To Come Home To",
+        key: "Am",
         measures: 32,
         chords: [
           "Am7", "Am7", "Bm7b5", "E7", "Am7", "Am7", "Bm7b5", "E7",
@@ -281,6 +323,7 @@
       const [measureCount, setMeasureCount] = useState(8);
       const [chords, setChords] = useState(Array(64).fill(""));
       const [currentSongTitle, setCurrentSongTitle] = useState("");
+      const [currentSongKey, setCurrentSongKey] = useState("C"); // ★曲のキー（調号）を保持するステート
       const [playStyle, setPlayStyle] = useState("bebop"); 
       
       const [abcString, setAbcString] = useState("");
@@ -299,6 +342,7 @@
         const preset = ["Dm7", "G7", "Cmaj7", "Cmaj7", "Em7", "A7", "Dmaj7", "Dmaj7"];
         preset.forEach((c, i) => { initialChords[i] = c; });
         setChords(initialChords);
+        setCurrentSongKey("C");
       }, []);
 
       useEffect(() => {
@@ -325,6 +369,22 @@
             paddingright: 0,
             staffwidth: 800
           });
+
+          const paperDiv = document.getElementById("paper");
+          if (paperDiv) {
+              const texts = paperDiv.querySelectorAll("text");
+              texts.forEach(text => {
+                  if (text.textContent.includes("120") || text.textContent.includes("=")) {
+                      text.style.display = "none";
+                  }
+              });
+              const paths = paperDiv.querySelectorAll("path");
+              paths.forEach(path => {
+                  if (path.parentNode && path.parentNode.classList.contains("abcjs-tempo")) {
+                      path.parentNode.style.display = "none";
+                  }
+              });
+          }
 
           const currentAudioString = isBackingOnly ? backingAbcString : audioAbcString;
           const visualObjForAudio = window.ABCJS.renderAbc("audio-paper", currentAudioString, {
@@ -425,13 +485,16 @@
         const newChords = Array(64).fill("");
         if (type === '251') {
           setMeasureCount(4);
+          setCurrentSongKey("C");
           ["Dm7", "G7", "Cmaj7", "Cmaj7"].forEach((c, i) => newChords[i] = c);
         } else if (type === 'blues') {
           setMeasureCount(12);
+          setCurrentSongKey("F");
           const blues = ["F7", "Bb7", "F7", "Cm7 F7", "Bb7", "Bdim7", "F7", "Am7 D7", "Gm7", "C7", "F7 D7", "Gm7 C7"];
           blues.forEach((c, i) => newChords[i] = c);
         } else if (type === 'autumn') {
           setMeasureCount(8);
+          setCurrentSongKey("Gm");
           const autumn = ["Cm7", "F7", "Bbmaj7", "Ebmaj7", "Am7b5", "D7", "Gm7", "Gm7"];
           autumn.forEach((c, i) => newChords[i] = c);
         }
@@ -441,6 +504,7 @@
 
       const selectStandardSong = (song) => {
         setMeasureCount(song.measures);
+        setCurrentSongKey(song.key || "C"); // 曲データから調号を設定
         const newChords = Array(64).fill("");
         song.chords.forEach((c, i) => { newChords[i] = c; });
         setChords(newChords);
@@ -553,24 +617,23 @@
       };
 
       const generateEtude = () => {
-        // ★表示用ヘッダーからはBPM指定(Q:)を消して見た目をスッキリさせます
         let headerDisplay = "X: 1\n";
         headerDisplay += "T: Jazz Solo Etude\n";
         headerDisplay += "M: 4/4\n";
         headerDisplay += "L: 1/8\n";
-        headerDisplay += "K: C\n"; 
+        headerDisplay += `K: ${currentSongKey}\n`; // ★選択された曲の調号を適用
         headerDisplay += "%%staffwidth 800\n"; 
 
         let isModalTune = playStyle === "modal";
         let bassProgram = isModalTune ? 39 : 32;
 
-        // ★再生用ヘッダーにはBPM指定(Q:)を残し、プレイヤーに読み取らせます
         let headerAudio = "X: 1\n";
         headerAudio += "T: Jazz Solo Etude\n";
         headerAudio += "M: 4/4\n";
         headerAudio += "L: 1/8\n";
+        headerAudio += `K: ${currentSongKey}\n`; 
         headerAudio += "Q: 1/4=120\n"; 
-        headerAudio += "K: C\n"; 
+        headerAudio += "%%stretchlast 1\n";
         headerAudio += "%%staves (1 2 3)\n";
         headerAudio += "V: 1 clef=treble\n";
         headerAudio += "%%MIDI program 0\n"; 
@@ -582,13 +645,13 @@
         headerAudio += "%%MIDI program " + bassProgram + "\n"; 
         headerAudio += "%%MIDI control 7 100\n"; 
 
-        // ★伴奏のみ用ヘッダーにも同様にBPM指定を残します
         let headerBacking = "X: 1\n";
         headerBacking += "T: Jazz Solo Etude (Backing Track)\n";
         headerBacking += "M: 4/4\n";
         headerBacking += "L: 1/8\n";
+        headerBacking += `K: ${currentSongKey}\n`; 
         headerBacking += "Q: 1/4=120\n"; 
-        headerBacking += "K: C\n"; 
+        headerBacking += "%%stretchlast 1\n";
         headerBacking += "%%staves (1 2 3)\n";
         headerBacking += "V: 1 clef=treble\n";
         headerBacking += "%%MIDI program 0\n"; 
@@ -600,38 +663,28 @@
         headerBacking += "%%MIDI program " + bassProgram + "\n"; 
         headerBacking += "%%MIDI control 7 100\n";
 
+        // ★調号の情報を元に、臨時記号が必要かどうかを判定する新しいロジック
         const getAbcNote = (midi, measureAccidentalsRef, currentChord) => {
-          let isFlatKey = false;
-          if (currentChord) {
-             const match = currentChord.match(/^[A-G][#b]?/);
-             if (match) {
-                 const root = match[0];
-                 const flatRoots = ['F', 'Bb', 'Eb', 'Ab', 'Db', 'Gb'];
-                 if (flatRoots.includes(root)) {
-                     isFlatKey = true;
-                 } else if (currentChord.includes('m') && !currentChord.includes('maj')) {
-                     if (['C', 'G', 'D'].includes(root)) {
-                         isFlatKey = true;
-                     }
-                 }
-             }
-          }
-          
-          let noteNames, defaultAccidentals;
-          
-          if (isFlatKey) {
-            noteNames = ['C', 'D', 'D', 'E', 'E', 'F', 'G', 'G', 'A', 'A', 'B', 'B'];
-            defaultAccidentals = ['', '_', '', '_', '', '', '_', '', '_', '', '_', '']; 
+          const isFlat = ['F', 'Bb', 'Eb', 'Ab', 'Db', 'Gb', 'Dm', 'Gm', 'Cm', 'Fm'].includes(currentSongKey);
+          const keySig = keySignatures[currentSongKey] || keySignatures['C'];
+
+          const noteClass = midi % 12;
+          let baseName, targetAccVal;
+          if (isFlat) {
+            const flatMap = [
+              ['C', 0], ['D', -1], ['D', 0], ['E', -1], ['E', 0], ['F', 0], 
+              ['G', -1], ['G', 0], ['A', -1], ['A', 0], ['B', -1], ['B', 0]
+            ];
+            [baseName, targetAccVal] = flatMap[noteClass];
           } else {
-            noteNames = ['C', 'C', 'D', 'D', 'E', 'F', 'F', 'G', 'G', 'A', 'A', 'B'];
-            defaultAccidentals = ['', '^', '', '^', '', '', '^', '', '^', '', '^', '']; 
+            const sharpMap = [
+              ['C', 0], ['C', 1], ['D', 0], ['D', 1], ['E', 0], ['F', 0], 
+              ['F', 1], ['G', 0], ['G', 1], ['A', 0], ['A', 1], ['B', 0]
+            ];
+            [baseName, targetAccVal] = sharpMap[noteClass];
           }
           
           const octave = Math.floor(midi / 12) - 1;
-          const noteClass = midi % 12;
-          const baseName = noteNames[noteClass];
-          const targetAcc = defaultAccidentals[noteClass];
-          
           let abcName = baseName;
           
           if (octave <= 3) {
@@ -645,13 +698,16 @@
               for (let k = 5; k < octave; k++) abcName += "'";
           }
           
-          const key = baseName + octave;
-          const currentAcc = measureAccidentalsRef[key] !== undefined ? measureAccidentalsRef[key] : '';
+          const stateKey = baseName + octave;
+          let currentAccVal = measureAccidentalsRef[stateKey];
+          if (currentAccVal === undefined) {
+              currentAccVal = keySig[baseName];
+          }
           
           let prefix = "";
-          if (currentAcc !== targetAcc) {
-              prefix = targetAcc === '' ? '=' : targetAcc;
-              measureAccidentalsRef[key] = targetAcc;
+          if (targetAccVal !== currentAccVal) {
+              prefix = targetAccVal === 1 ? "^" : (targetAccVal === -1 ? "_" : "=");
+              measureAccidentalsRef[stateKey] = targetAccVal;
           }
           return prefix + abcName;
         };
@@ -1326,7 +1382,6 @@
 
         setAbcString(headerDisplay + fullMelody);
         
-        // ★インラインで全てのV:(ボイス)の直後にQ:(BPM)を追加し、ABCJSに強制認識させます
         let finalAudioAbc = headerAudio;
         finalAudioAbc += "[V: 1]\n[Q: 1/4=120]\n" + fullMelody;
         finalAudioAbc += "[V: 2]\n[Q: 1/4=120]\n" + fullAccompaniment;
